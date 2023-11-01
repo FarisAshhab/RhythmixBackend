@@ -1,0 +1,1 @@
+export const MONGO_URL = 'https://us-east-2.aws.data.mongodb-api.com/app/data-ymgoh/endpoint/data/v1/action' as const;
