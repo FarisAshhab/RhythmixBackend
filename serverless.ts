@@ -1,6 +1,7 @@
 import type { AWS } from '@serverless/typescript';
 
 import hello from '@functions/hello';
+import { addUser } from '@functions/users';
 
 const serverlessConfiguration: AWS = {
   service: 'rhythmix-backend',
@@ -19,7 +20,10 @@ const serverlessConfiguration: AWS = {
     },
   },
   // import the function via paths
-  functions: { hello },
+  functions: { 
+    hello,
+    addUser
+  },
   package: { individually: true },
   custom: {
     esbuild: {
