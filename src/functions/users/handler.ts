@@ -4,11 +4,15 @@ import {
 	ValidatedEventAPIGatewayProxyEvent,
 } from "@libs/api-gateway";
 import { middyfy } from '@libs/lambda';
+import { auth } from "src/middleware/auth";
 import { compare, hash } from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import AwsService from "../../service/Aws/AwsService"
-import {addUserSchema} from './schema';
 import userDAO from "src/db/userDAO";
+import {
+	addUserSchema,
+	loginUserSchema
+} from './schema';
 
 const userDao = userDAO()
 const awsService = AwsService()
@@ -17,50 +21,103 @@ const awsService = AwsService()
 const addUser: ValidatedEventAPIGatewayProxyEvent<
 	typeof addUserSchema
 > = async (event, context) => {
-	
-	context.callbackWaitsForEmptyEventLoop = false;
-    console.log(event.body);
-	const userFound = await userDao.createUser(event.body)
-    console.log(userFound)
-	// await connectMongo();
-	
-	// const userFound = await userModel.findOne({
-	// 	email: event.body.email.toLowerCase(),
-	// });
+	try {
+		context.callbackWaitsForEmptyEventLoop = false;
+		console.log(event.body);
+		const userFound = await userDao.createUser(event.body)
+		console.log(userFound)
+		let userInfo = JSON.parse(userFound.body)
+		console.log("userInfo")
+		console.log(userInfo)
+		const payload = {
+			user: {
+				id: userInfo.savedUser._id,
+			},
+		};
+		const secretKey = await awsService.fetchCredential("JWT_SECRETKEY");
+		const token = await sign(payload, secretKey, {
+			expiresIn: '7d', // will change to '365d' after we test a shorter timeframe for token and make sure it works
+		});
+		console.log("token being printed under");
+		console.log(token)
 
-	// if (userFound) {
-	// 	return formatErrorResponse(409, "User Already Exists");
-	// }
+		if (typeof token !== "string") {
+			return formatErrorResponse(400, "JWT Error: Tokenizing");
+		}
 
-	// const passwordhash = await hash(event.body.password, 10);
-
-	// if (typeof passwordhash !== "string") {
-	// 	return formatErrorResponse(400, "Bcrypt Error: Password hashing");
-	// }
-
-    // const savedUser = await userModel.findOne({
-	// 	email: event.body.email.toLowerCase(),
-	// });
-
-	// if (!savedUser) {
-	// 	return formatErrorResponse(500, "Server Error. Please try logging in.");
-	// }
-
-	// const payload = {
-	// 	user: {
-	// 		id: savedUser.id,
-	// 	},
-	// };
-
-	// const token = await sign(payload, KEYS["secretKey"], {
-	// 	expiresIn: 36000,
-	// });
-
-	// if (typeof token !== "string") {
-	// 	return formatErrorResponse(400, "JWT Error: Tokenizing");
-	// }
-
-	return formatJSONResponse({ user: userFound });
+		return formatJSONResponse({ token });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
 };
 
+
+/*
+	tasks: fetches user 
+	returns: user object or error
+	params: event and context
+*/
+const getUserByToken: ValidatedEventAPIGatewayProxyEvent<any> = async (
+	event,
+	context
+) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const userFound = await userDao.getUserById(authenticatedEvent.body)
+		return formatJSONResponse({ user: userFound });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+const loginUser: ValidatedEventAPIGatewayProxyEvent<
+	typeof loginUserSchema
+> = async (event, context) => {
+	try {
+		context.callbackWaitsForEmptyEventLoop = false;
+		const userFound = await userDao.loginUser(event.body)
+		console.log("userFound::::")
+		console.log(userFound)
+		let userInfo = JSON.parse(userFound.body)
+		const payload = {
+			user: {
+				id: userInfo.userFound._id,
+			},
+		};
+
+		const secretKey = await awsService.fetchCredential("JWT_SECRETKEY");
+		const token = await sign(payload, secretKey, {
+			expiresIn: '7d', // will change to '365d' after we test a shorter timeframe for token and make sure it works
+		});
+		console.log("token being printed under");
+		console.log(token)
+
+		if (typeof token !== "string") {
+			return formatErrorResponse(400, "JWT Error: Tokenizing");
+		}
+
+		// we need to log that a user logged in and at what time, will have to create a logging API for this - Not crucial now
+		return formatJSONResponse({ token });
+
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+
 export const ADD_USER = middyfy(addUser);
+export const GET_USER = middyfy(getUserByToken);
+export const LOGIN = middyfy(loginUser);

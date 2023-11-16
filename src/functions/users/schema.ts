@@ -1,3 +1,7 @@
+
+/*
+	This schema is to be followed when a user is created
+*/
 export const addUserSchema = {
 	type: "object",
 	properties: {
@@ -20,4 +24,17 @@ export const addUserSchema = {
 		"password",
         "profile_type"
 	],
+} as const;
+
+
+/*
+	This schema is to be followed when a user is logging in
+*/
+export const loginUserSchema = {
+	type: "object",
+	properties: {
+		email: { type: "string", format: "email" },
+		password: { type: "string" },
+	},
+	required: ["email", "password"],
 } as const;
