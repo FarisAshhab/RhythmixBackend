@@ -1,6 +1,7 @@
 import { handlerPath } from '@libs/handler-resolver';
 import {
-	addUserSchema
+	addUserSchema,
+	loginUserSchema
 } from "./schema";
 
 export const addUser = {
@@ -20,4 +21,49 @@ export const addUser = {
 		},
 	],
 };
+
+export const getUserByToken = {
+	handler: `${handlerPath(__dirname)}/handler.GET_USER`,
+	events: [
+		{
+			http: {
+				method: "get",
+				path: "rhythmix/getUser/{token}",
+				cors: true,
+				request: {
+					parameters: {
+						paths: {
+							token: true,
+						},
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to login a user
+	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+*/
+export const loginUser = {
+	handler: `${handlerPath(__dirname)}/handler.LOGIN`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/login",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": loginUserSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+
+
 
