@@ -77,21 +77,6 @@ function userDAO() {
                 return formatErrorResponse(500, "Server Error. Please try logging in.");
             }
         
-            // const payload = {
-            //     user: {
-            //         id: savedUser.id,
-            //     },
-            // };
-        
-            // const token = await sign(payload, KEYS["secretKey"], {
-            //     expiresIn: 36000,
-            // });
-        
-            // if (typeof token !== "string") {
-            //     return formatErrorResponse(400, "JWT Error: Tokenizing");
-            // }
-        
-            // return formatJSONResponse({ token });
             return formatJSONResponse({ savedUser });
         
         } catch (e) {
@@ -100,7 +85,88 @@ function userDAO() {
             messages: [{ error: e }]
             });
         }
-      }
+      },
+
+      async loginUser(body: any) {
+        try {
+            await connectMongo();
+
+            console.log(body.email);
+            const userFound = await userModel.findOne({
+                email: body.email.toLowerCase(),
+            });
+
+            console.log(userFound);
+            
+            if (!userFound) {
+                return formatErrorResponse(404, "Email Not Found");
+            }
+
+            const match = await compare(body.password, userFound.password);
+
+            if (typeof match !== "boolean") {
+                return formatErrorResponse(400, "Bcrypt Error: Password Checking");
+            }
+
+            if (!match) {
+                return formatErrorResponse(401, "Password not authorized");
+            }
+        
+            return formatJSONResponse({ userFound });
+        
+        } catch (e) {
+            console.log(e);
+            return formatJSONResponse({
+            messages: [{ error: e }]
+            });
+        }
+      },
+
+      async getUserById(id: string){
+        try {
+            await connectMongo();
+            console.log(id);
+
+            const userFound = await userModel.findById(id as ObjectId);
+            console.log("userFound")
+            console.log(userFound)
+            if (!userFound) {
+                return formatErrorResponse(404, "User Not Found");
+            }
+
+            // this is used to filter out any fields we dont want to return like (password), we can also query other collections here if needed moving forward
+            const userResultFound = await userModel.aggregate([
+                {
+                    $match: {
+                        _id: new ObjectId(id as string),
+                    },
+                },
+                {
+                    $project: {
+                        email: 1,
+                        first_name: 1,
+                        last_name: 1,
+                        display_name: 1,
+                        user_name: 1,
+                        profile_type: 1,
+                        profile_pic: 1,
+                        bio: 1
+                    },
+                },
+            ]);
+        
+            if (userResultFound.length === 0) {
+                return formatErrorResponse(404, "User Not Found");
+            }
+        
+            return formatJSONResponse({ user: userResultFound[0] });
+        } catch (e) {
+            console.log(e);
+            return formatJSONResponse({
+            messages: [{ error: e }]
+            });
+        }
+      },
       
 
       
