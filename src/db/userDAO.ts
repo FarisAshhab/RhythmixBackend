@@ -56,13 +56,18 @@ function userDAO() {
                 profile_type: body?.profile_type,
                 created_at: new Date() // Adds the created_at timestamp in UTC - this is a standard when dealing with times in MongoDB
             }
+            // if spotify_creds --> add them
+            if (body?.access_token && body?.refresh_token){
+                data.spotify_credentials.access_token = body?.access_token
+                data.spotify_credentials.refresh_token = body?.refresh_token
+            }
             // if s3 image_url is present (profile_pic) - add it
             if (body?.profile_pic){
-            data.profile_pic = body.profilePic;
+                data.profile_pic = body.profilePic;
             }
             // if bio is present - add it
             if (body?.bio){
-            data.bio = body.bio;
+                data.bio = body.bio;
             }
      
             const newUser = new userModel(data);
