@@ -4,8 +4,14 @@ import hello from '@functions/hello';
 import { 
   addUser,
   getUserByToken,
-  loginUser
+  loginUser,
+  updateUserSpotifyCreds,
  } from '@functions/users';
+
+ import { 
+  refreshUserSpotifyToken,
+  fetchMostRecentSong
+ } from '@functions/spotify';
 
 const serverlessConfiguration: AWS = {
   service: 'rhythmix-backend',
@@ -28,7 +34,10 @@ const serverlessConfiguration: AWS = {
     hello,
     addUser,
     getUserByToken,
-    loginUser
+    loginUser,
+    updateUserSpotifyCreds,
+    refreshUserSpotifyToken,
+    fetchMostRecentSong
   },
   package: { individually: true },
   custom: {

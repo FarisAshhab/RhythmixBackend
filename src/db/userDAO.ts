@@ -168,9 +168,34 @@ function userDAO() {
         }
       },
       
+      async updateUserSpotifyCreds(id: string, access_token: string, refresh_token: string){
+        try {
+            await connectMongo();
+            console.log("id printed below");
+            console.log(id);
 
-      
+            const userFound = await userModel.findById(id as ObjectId);
+            console.log("userFound")
+            console.log(userFound)
+            if (!userFound) {
+                return formatErrorResponse(404, "User Not Found");
+            }
 
+            userFound.spotify_credentials.access_token = access_token;
+            userFound.spotify_credentials.refresh_token = refresh_token;
+
+            await userFound.save();
+
+            return formatJSONResponse({
+                msg: "User Spotify Creds Reset",
+            });
+        } catch (e) {
+            console.log(e);
+            return formatJSONResponse({
+            messages: [{ error: e }]
+            });
+        }
+      }
       
     }
 
