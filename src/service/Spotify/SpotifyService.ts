@@ -48,13 +48,26 @@ function SpotifyService() {
             try {
                 const response: AxiosResponse = await axios.get(`${SPOTIFY_USER_URL}/player/recently-played?limit=1`, { headers });
             
-                const trackInfo = response.data.items[0].track;
+                const track = response.data.items[0].track;
+                const artists = track.artists.map((artist: any) => ({
+                    name: artist.name,
+                    id: artist.id,
+                    spotifyUrl: artist.external_urls.spotify
+                }));
+
+                const images = track.album.images.map((image: any) => ({
+                    url: image.url,
+                    height: image.height,
+                    width: image.width
+                }));
+
                 return {
-                    trackInfo
-                    // name: trackInfo.name,
-                    // artists: trackInfo.artists.map((artist: any) => artist.name).join(', '),
-                    // album: trackInfo.album.name,
-                    // // Add other track details you need here
+                    trackId: track.id,
+                    trackName: track.name,
+                    previewUrl: track.preview_url,
+                    spotifyTrackUrl: track.external_urls.spotify,
+                    artists: artists,
+                    images: images
                 };
             } catch (e) {
                 console.error('Error fetching recently played song:', e);
