@@ -3,6 +3,11 @@ import { Document, Model, model, models, ObjectId, Schema } from "mongoose";
 	Used for new users, whenever a new user is created, this schema is used, all fields except phone_number, bio, and profile_pic are required
 */
 
+interface ISpotifyCredentials {
+    access_token?: string;
+    refresh_token?: string;
+}
+
 const userSchema: Schema = new Schema(
 	{
 		email: {
@@ -45,7 +50,17 @@ const userSchema: Schema = new Schema(
 		},
         profile_pic: {
 			type: String
-		}
+		},
+		spotify_credentials: {
+            access_token: {
+                type: String,
+                required: false
+            },
+            refresh_token: {
+                type: String,
+                required: false 
+            }
+        }
 	},
 	{
 		collection: "user",
@@ -64,8 +79,8 @@ interface IUser extends Document {
 	created_at: Date,
     phone_number?: string;
     bio?: string;
-    profile_pic?:string
-	
+    profile_pic?:string;
+	spotify_credentials?: ISpotifyCredentials;
 }
 
 export default (models.user

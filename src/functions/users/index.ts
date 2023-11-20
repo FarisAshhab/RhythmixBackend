@@ -1,7 +1,8 @@
 import { handlerPath } from '@libs/handler-resolver';
 import {
 	addUserSchema,
-	loginUserSchema
+	loginUserSchema,
+	updateUserSpotifyCredsSchema
 } from "./schema";
 
 export const addUser = {
@@ -57,6 +58,28 @@ export const loginUser = {
 				request: {
 					schemas: {
 						"application/json": loginUserSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to update a user spotify creds
+	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+*/
+export const updateUserSpotifyCreds = {
+	handler: `${handlerPath(__dirname)}/handler.UPDATE_USER_SPOTIFY_CREDS`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/updateUserSpotifyCreds",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": updateUserSpotifyCredsSchema,
 					},
 				},
 			},
