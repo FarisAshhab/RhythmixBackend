@@ -38,3 +38,20 @@ export const loginUserSchema = {
 	},
 	required: ["email", "password"],
 } as const;
+
+/*
+	This schema is to be followed when a user's spotify creds are updated in database'
+*/
+export const updateUserSpotifyCredsSchema = {
+	type: "object",
+	properties: {
+		access_token: { type: "string" },
+		refresh_token: { type: "string" },
+		token: { type: "string" }
+	},
+	required: [
+		"access_token",
+        "refresh_token",
+		"token"
+	],
+} as const;
