@@ -10,7 +10,8 @@ import {
 
  import { 
   refreshUserSpotifyToken,
-  fetchMostRecentSong
+  fetchMostRecentSong,
+  spotifyLogin
  } from '@functions/spotify';
 
 const serverlessConfiguration: AWS = {
@@ -37,7 +38,8 @@ const serverlessConfiguration: AWS = {
     loginUser,
     updateUserSpotifyCreds,
     refreshUserSpotifyToken,
-    fetchMostRecentSong
+    fetchMostRecentSong,
+    spotifyLogin
   },
   package: { individually: true },
   custom: {

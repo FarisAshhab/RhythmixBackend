@@ -48,3 +48,17 @@ export const fetchMostRecentSong = {
 		},
 	],
 };
+
+
+export const spotifyLogin = {
+    handler: `${handlerPath(__dirname)}/handler.SPOTIFY_LOGIN`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'rhythmix/spotify/login',
+          cors: true
+        },
+      },
+    ],
+  };

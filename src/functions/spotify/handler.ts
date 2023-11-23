@@ -4,9 +4,10 @@ import {
 	ValidatedEventAPIGatewayProxyEvent,
 } from "@libs/api-gateway";
 import { middyfy } from '@libs/lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import AwsService from "../../service/Aws/AwsService"
 import SpotifyService from "../../service/Spotify/SpotifyService"
-import { auth, decrypt, encrypt } from "src/middleware/auth";
+import { auth, decrypt, encrypt, generateRandomString } from "src/middleware/auth";
 import userDAO from "src/db/userDAO";
 import {
     refreshUserSpotifyTokenSchema,
@@ -71,5 +72,28 @@ const fetchMostRecentSong: ValidatedEventAPIGatewayProxyEvent<
 	}
 };
 
+const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<APIGatewayProxyResult> => {
+    try {
+      const state = generateRandomString(16);
+      const spotifyAuthUrl = await spotifyService.createLoginURL(state);
+  
+      return {
+        statusCode: 302,
+        headers: {
+          'Set-Cookie': `spotify_auth_state=${state}; Secure; HttpOnly; Path=/; Max-Age=3600`,
+          Location: spotifyAuthUrl
+        },
+        body: JSON.stringify({}) // Body is required, even if it's empty
+      };
+    } catch (error) {
+      console.error('Login Error:', error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Internal Server Error' })
+      };
+    }
+  };
+
 export const REFRESH_USER_SPOTIFY_CREDS = middyfy(refreshUserSpotifyToken);
 export const FETCH_MOST_RECENT_SONG = middyfy(fetchMostRecentSong);
+export const SPOTIFY_LOGIN = middyfy(spotifyLogin);

@@ -7,6 +7,10 @@ import {
 	formatErrorResponse,
 	ValidatedEventAPIGatewayProxyEvent,
 } from "@libs/api-gateway";
+import * as dotenv from 'dotenv'
+
+dotenv.config()
+
 
 const awsService = AwsService()
 
@@ -73,7 +77,25 @@ function SpotifyService() {
                 console.error('Error fetching recently played song:', e);
                 throw new Error('Failed to fetch recently played song');
             }
-        }
+        },
+
+        async createLoginURL(state: string): Promise<any> {
+            const client_id = await awsService.fetchCredential("CLIENT_ID_SPOTIFY");
+            try {
+                const spotifyAuthUrl = `https://accounts.spotify.com/authorize?${new URLSearchParams({
+                    response_type: 'code',
+                    client_id: client_id, 
+                    scope: 'user-read-private user-read-email',
+                    redirect_uri: process.env.SPOTIFY_REDIRECT_URL,
+                    state: state
+                })}`;
+            
+                return spotifyAuthUrl;
+            } catch (e) {
+                console.error('Error generating spotify login url', e);
+                throw new Error('Failed to create login url');
+            }
+        },
 
 
     }

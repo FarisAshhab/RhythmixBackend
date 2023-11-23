@@ -41,10 +41,9 @@ export const encrypt = async (text: any) => {
 
         return iv.toString('hex') + ':' + encrypted.toString('hex');
 	} catch (e) {
-		console.log("Error in encrypting");
-        console.log(e)
-        return "Error in encrypting"
-	}
+        console.error("Error in encryption:", e);
+        throw new Error('Encryption error');
+    }
 };
 
 
@@ -61,8 +60,27 @@ export const decrypt = async (text: any) => {
 
         return decrypted.toString();
 	} catch (e) {
-		console.log("Error decrypting");
-        console.log(e)
-        return 'Error decrypting'
-	}
+        console.error("Error in decryption:", e);
+        throw new Error('decryption error');
+    }
+};
+
+
+/**
+ * Generates a random string of specified length.
+ * This is used for generating a state parameter in the Spotify login process
+ * to prevent CSRF attacks.
+ *
+ * @param {number} length - The desired length of the random string.
+ * @returns {string} A random string of the specified length.
+ */
+export const generateRandomString = (length: number): string => {
+    try {
+        return crypto.randomBytes(Math.ceil(length / 2))
+            .toString('hex')  // Convert to hexadecimal format
+            .slice(0, length);  // Return the required number of characters
+    } catch (e) {
+        console.error("Error generating random string:", e);
+        throw new Error('Failed to generate random string');
+    }
 };
