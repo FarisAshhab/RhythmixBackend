@@ -61,4 +61,18 @@ export const spotifyLogin = {
         },
       },
     ],
-  };
+};
+
+
+export const spotifyCallback = {
+	handler: `${handlerPath(__dirname)}/handler.SPOTIFY_CALLBACK`,
+	events: [
+	  {
+		http: {
+		  method: 'get',
+		  path: 'rhythmix/spotify/callback',
+		  cors: true
+		},
+	  },
+	],
+};

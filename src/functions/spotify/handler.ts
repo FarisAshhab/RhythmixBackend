@@ -94,6 +94,36 @@ const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<
     }
   };
 
+  const spotifyCallback: ValidatedEventAPIGatewayProxyEvent<any> = async (event): Promise<APIGatewayProxyResult> => {
+	try {
+	  const code = event.queryStringParameters?.code || '';
+	  const state = event.queryStringParameters?.state || '';
+  
+	  //logic to verify the state value
+	  const tokens = await spotifyService.exchangeCodeForTokens(code);
+	  console.log("tokens")
+	  console.log(tokens)
+	  
+  
+	  return {
+		statusCode: 302,
+		headers: {
+		  Location: `http://localhost:8888/#access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`,
+		},
+		body: JSON.stringify({})
+	  };
+	} catch (error) {
+	  console.error('Callback Error:', error);
+	  return {
+		statusCode: 500,
+		body: JSON.stringify({ error: 'Internal Server Error' })
+	  };
+	}
+  };
+  
+
+
 export const REFRESH_USER_SPOTIFY_CREDS = middyfy(refreshUserSpotifyToken);
 export const FETCH_MOST_RECENT_SONG = middyfy(fetchMostRecentSong);
 export const SPOTIFY_LOGIN = middyfy(spotifyLogin);
+export const SPOTIFY_CALLBACK = middyfy(spotifyCallback);
