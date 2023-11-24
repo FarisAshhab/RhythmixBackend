@@ -7,6 +7,10 @@ import {
 	formatErrorResponse,
 	ValidatedEventAPIGatewayProxyEvent,
 } from "@libs/api-gateway";
+import * as dotenv from 'dotenv'
+
+dotenv.config()
+
 
 const awsService = AwsService()
 
@@ -72,6 +76,53 @@ function SpotifyService() {
             } catch (e) {
                 console.error('Error fetching recently played song:', e);
                 throw new Error('Failed to fetch recently played song');
+            }
+        },
+
+        async createLoginURL(state: string): Promise<any> {
+            const client_id = await awsService.fetchCredential("CLIENT_ID_SPOTIFY");
+            const scope = 'user-read-private user-read-email user-read-recently-played';
+            try {
+                const spotifyAuthUrl = `https://accounts.spotify.com/authorize?${new URLSearchParams({
+                    response_type: 'code',
+                    client_id: client_id, 
+                    scope: scope,
+                    redirect_uri: process.env.SPOTIFY_REDIRECT_URL,
+                    state: state
+                })}`;
+            
+                return spotifyAuthUrl;
+            } catch (e) {
+                console.error('Error generating spotify login url', e);
+                throw new Error('Failed to create login url');
+            }
+        },
+
+        // In spotifyService.ts
+        async exchangeCodeForTokens(code: string): Promise<{ access_token: string, refresh_token: string }> {
+            try {
+                const client_id = await awsService.fetchCredential("CLIENT_ID_SPOTIFY");
+                const client_secret = await awsService.fetchCredential("CLIENT_SECRET_SPOTIFY");
+                
+                const response = await axios.post(
+                    'https://accounts.spotify.com/api/token',
+                    querystring.stringify({
+                    code: code,
+                    redirect_uri: process.env.SPOTIFY_REDIRECT_URL,
+                    grant_type: 'authorization_code',
+                    }),
+                    {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': `Basic ${Buffer.from(`${client_id}:${client_secret}`).toString('base64')}`,
+                    },
+                    }
+            );
+        
+            return response.data; // Contains access_token and refresh_token
+            } catch (e) {
+                console.error('Error exchanging code for tokens:', e);
+                throw new Error('Failed to exchange code for tokens');
             }
         }
 
