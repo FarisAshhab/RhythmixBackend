@@ -48,3 +48,31 @@ export const fetchMostRecentSong = {
 		},
 	],
 };
+
+
+export const spotifyLogin = {
+    handler: `${handlerPath(__dirname)}/handler.SPOTIFY_LOGIN`,
+    events: [
+      {
+        http: {
+          method: 'get',
+          path: 'rhythmix/spotify/login',
+          cors: true
+        },
+      },
+    ],
+};
+
+
+export const spotifyCallback = {
+	handler: `${handlerPath(__dirname)}/handler.SPOTIFY_CALLBACK`,
+	events: [
+	  {
+		http: {
+		  method: 'get',
+		  path: 'rhythmix/spotify/callback',
+		  cors: true
+		},
+	  },
+	],
+};
