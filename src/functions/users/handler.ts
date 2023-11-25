@@ -12,7 +12,8 @@ import userDAO from "src/db/userDAO";
 import {
 	addUserSchema,
 	loginUserSchema,
-	updateUserSpotifyCredsSchema
+	updateUserSpotifyCredsSchema,
+	updateUserProfileSchema
 } from './schema';
 
 const userDao = userDAO()
@@ -144,8 +145,29 @@ const updateUserSpotifyCreds: ValidatedEventAPIGatewayProxyEvent<
 	}
 };
 
+const updateUserProfile: ValidatedEventAPIGatewayProxyEvent<
+	typeof updateUserProfileSchema
+> = async (event, context) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const userUpdated = await userDao.updateUserInfo(authenticatedEvent.body.user, authenticatedEvent.body.data);
+		let userInfo = JSON.parse(userUpdated.body);
+		return formatJSONResponse({ user: userInfo.msg });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
 
 export const ADD_USER = middyfy(addUser);
 export const GET_USER = middyfy(getUserByToken);
 export const LOGIN = middyfy(loginUser);
 export const UPDATE_USER_SPOTIFY_CREDS = middyfy(updateUserSpotifyCreds);
+export const UPDATE_USER_ACCOUNT = middyfy(updateUserProfile);

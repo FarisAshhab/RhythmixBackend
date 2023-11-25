@@ -79,6 +79,31 @@ function SpotifyService() {
             }
         },
 
+        // Function to get the spotify profile information - to pre populate create account form after spotify auth
+        async getProfileSpotifyInfo(accessToken: string): Promise<any> {
+            const headers = {
+            'Authorization': `Bearer ${accessToken}`
+            };
+        
+            try {
+                const response: AxiosResponse = await axios.get(`${SPOTIFY_USER_URL}`, { headers });
+            
+                const displayName = response.data.display_name;
+                const externalURL= response.data.external_urls.spotify;
+                const userEmail= response.data.email;
+                
+                return {
+                    spotifyDisplayName: displayName,
+                    spotifyURL: externalURL,
+                    email: userEmail
+                };
+            } catch (e) {
+                console.error('Error fetching recently played song:', e);
+                throw new Error('Failed to fetch recently played song');
+            }
+        },
+
+
         async createLoginURL(state: string): Promise<any> {
             const client_id = await awsService.fetchCredential("CLIENT_ID_SPOTIFY");
             const scope = 'user-read-private user-read-email user-read-recently-played';

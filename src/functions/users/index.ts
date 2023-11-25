@@ -2,7 +2,8 @@ import { handlerPath } from '@libs/handler-resolver';
 import {
 	addUserSchema,
 	loginUserSchema,
-	updateUserSpotifyCredsSchema
+	updateUserSpotifyCredsSchema,
+	updateUserProfileSchema
 } from "./schema";
 
 export const addUser = {
@@ -11,7 +12,7 @@ export const addUser = {
 		{
 			http: {
 				method: "post",
-				path: "rhythmix/addUser",
+				path: "rhythmix/user/addUser",
 				cors: true,
 				request: {
 					schemas: {
@@ -29,7 +30,7 @@ export const getUserByToken = {
 		{
 			http: {
 				method: "get",
-				path: "rhythmix/getUser/{token}",
+				path: "rhythmix/user/getUser/{token}",
 				cors: true,
 				request: {
 					parameters: {
@@ -53,7 +54,7 @@ export const loginUser = {
 		{
 			http: {
 				method: "post",
-				path: "rhythmix/login",
+				path: "rhythmix/user/login",
 				cors: true,
 				request: {
 					schemas: {
@@ -75,7 +76,7 @@ export const updateUserSpotifyCreds = {
 		{
 			http: {
 				method: "post",
-				path: "rhythmix/updateUserSpotifyCreds",
+				path: "rhythmix/user/updateSpotifyCreds",
 				cors: true,
 				request: {
 					schemas: {
@@ -87,6 +88,28 @@ export const updateUserSpotifyCreds = {
 	],
 };
 
+
+/*
+	post method to update a user object in DB
+	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+*/
+export const updateUserProfile = {
+	handler: `${handlerPath(__dirname)}/handler.UPDATE_USER_ACCOUNT`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/updateAccountInfo",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": updateUserProfileSchema,
+					},
+				},
+			},
+		},
+	],
+};
 
 
 
