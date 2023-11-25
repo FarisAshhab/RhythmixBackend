@@ -5,24 +5,25 @@
 export const addUserSchema = {
 	type: "object",
 	properties: {
-		first_name: { type: "string" },
-		last_name: { type: "string" },
         display_name: { type: "string" },
 		user_name: { type: "string" },
 		profile_type: { type: "string" },
 		email: { type: "string", format: "email" },
 		phone_number: { type: "string" },
 		password: { type: "string" },
-        bio: { type:"string" }
+        bio: { type:"string" },
+		spotify_url: { type:"string" },
+		access_token: { type: "string" },
+		refresh_token: { type: "string" }
 	},
 	required: [
-		"first_name",
-		"last_name",
         "display_name",
         "user_name",
 		"email",
 		"password",
-        "profile_type"
+        "profile_type",
+		"access_token",
+		"refresh_token"
 	],
 } as const;
 
@@ -54,4 +55,32 @@ export const updateUserSpotifyCredsSchema = {
         "refresh_token",
 		"token"
 	],
+} as const;
+
+
+/*
+	This schema is to be followed when a user's profile is updated on rhythmix
+*/
+export const updateUserProfileSchema = {
+	type: "object",
+    properties: {
+        data: {
+            type: "object",
+            properties: {
+                display_name: { type: "string" },
+                user_name: { type: "string" },
+                profile_type: { type: "string" },
+                spotify_url: { type: "string" },
+                profile_pic: { type: "string" },
+                bio: { type: "string" }
+            },
+            minProperties: 1, // Ensure at least one of the properties is present
+            additionalProperties: false // Optional: set to true to allow properties not listed above
+        },
+        token: { type: "string" }
+    },
+    required: [
+        "data",
+        "token"
+    ],
 } as const;

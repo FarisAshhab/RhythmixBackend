@@ -28,3 +28,17 @@ export const fetchMostRecentSongSchema = {
 		"user"
 	],
 } as const;
+
+
+/*
+	This schema is to be followed when a fetching user's spotify profile info
+*/
+export const fetchProfileSpotifyInfoSchema = {
+	type: "object",
+	properties: {
+		access_token: { type: "string" }
+	},
+	required: [
+        "access_token"
+	],
+} as const;
