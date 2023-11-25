@@ -6,13 +6,15 @@ import {
   getUserByToken,
   loginUser,
   updateUserSpotifyCreds,
+  updateUserProfile
  } from '@functions/users';
 
  import { 
   refreshUserSpotifyToken,
   fetchMostRecentSong,
   spotifyLogin,
-  spotifyCallback
+  spotifyCallback,
+  fetchProfileSpotifyInfo
  } from '@functions/spotify';
 
 const serverlessConfiguration: AWS = {
@@ -41,7 +43,9 @@ const serverlessConfiguration: AWS = {
     refreshUserSpotifyToken,
     fetchMostRecentSong,
     spotifyLogin,
-    spotifyCallback
+    spotifyCallback,
+    fetchProfileSpotifyInfo,
+    updateUserProfile
   },
   package: { individually: true },
   custom: {

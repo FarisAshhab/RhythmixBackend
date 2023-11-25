@@ -11,7 +11,8 @@ import { auth, decrypt, encrypt, generateRandomString } from "src/middleware/aut
 import userDAO from "src/db/userDAO";
 import {
     refreshUserSpotifyTokenSchema,
-    fetchMostRecentSongSchema
+    fetchMostRecentSongSchema,
+	fetchProfileSpotifyInfoSchema
 } from './schema';
 
 const userDao = userDAO()
@@ -72,6 +73,23 @@ const fetchMostRecentSong: ValidatedEventAPIGatewayProxyEvent<
 	}
 };
 
+const fetchProfileSpotifyInfo: ValidatedEventAPIGatewayProxyEvent<
+	typeof fetchProfileSpotifyInfoSchema
+> = async (event, context) => {
+	try {
+        // *we don't need session auth check here since we will be calling this prior to having the account created in db so we wont have a session*
+		// spotify token won't be encrypted when passed into here from frontend since it will be called directly after the user authorizes spotify
+		const profileInfo = await spotifyService.getProfileSpotifyInfo(event.body.access_token);
+        console.log(profileInfo);
+		return formatJSONResponse({ profile: profileInfo });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
 const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<APIGatewayProxyResult> => {
     try {
       const state = generateRandomString(16);
@@ -108,7 +126,7 @@ const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<
 	  return {
 		statusCode: 302,
 		headers: {
-		  Location: `http://localhost:8888/#access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`,
+		  Location: `http://localhost:8888/register/#access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`,
 		},
 		body: JSON.stringify({})
 	  };
@@ -125,5 +143,6 @@ const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<
 
 export const REFRESH_USER_SPOTIFY_CREDS = middyfy(refreshUserSpotifyToken);
 export const FETCH_MOST_RECENT_SONG = middyfy(fetchMostRecentSong);
+export const FETCH_PROFILE_SPOTIFY_INFO = middyfy(fetchProfileSpotifyInfo);
 export const SPOTIFY_LOGIN = middyfy(spotifyLogin);
 export const SPOTIFY_CALLBACK = middyfy(spotifyCallback);

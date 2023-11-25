@@ -9,7 +9,8 @@ import {
 	formatErrorResponse,
 	ValidatedEventAPIGatewayProxyEvent,
 } from "@libs/api-gateway";
-import { compare, hash } from "bcryptjs";
+import { compare, hash} from "bcryptjs";
+import { decrypt, encrypt } from "src/middleware/auth";
 import { sign } from "jsonwebtoken";
 
 import { default as userModel } from "./models/User";
@@ -46,8 +47,6 @@ function userDAO() {
             
             console.log(body)
             let data: any = {
-                first_name: body?.first_name, 
-                last_name: body?.last_name,
                 display_name: body?.display_name,
                 user_name: body?.user_name,
                 phone_number: body?.phone,
@@ -58,8 +57,18 @@ function userDAO() {
             }
             // if spotify_creds --> add them
             if (body?.access_token && body?.refresh_token){
-                data.spotify_credentials.access_token = body?.access_token
-                data.spotify_credentials.refresh_token = body?.refresh_token
+                let encryptedAccess_token = await encrypt(body?.access_token);
+                let encryptedRefresh_token = await encrypt(body?.refresh_token);
+
+                if (!data.spotify_credentials) {
+                    data.spotify_credentials = {};
+                }
+                data.spotify_credentials.access_token = encryptedAccess_token
+                data.spotify_credentials.refresh_token = encryptedRefresh_token
+            }
+            // if user spotify url is present - add it
+            if (body?.spotify_url){
+                data.spotify_url = body.spotify_url;
             }
             // if s3 image_url is present (profile_pic) - add it
             if (body?.profile_pic){
@@ -149,12 +158,11 @@ function userDAO() {
                 {
                     $project: {
                         email: 1,
-                        first_name: 1,
-                        last_name: 1,
                         display_name: 1,
                         user_name: 1,
                         profile_type: 1,
                         profile_pic: 1,
+                        spotify_url: 1,
                         bio: 1
                     },
                 },
@@ -200,7 +208,52 @@ function userDAO() {
             messages: [{ error: e }]
             });
         }
-      }
+      },
+
+        async updateUserInfo(userId: string, updateData: any) {
+            try {
+                await connectMongo();
+                console.log("Updating user with ID: ", userId);
+
+                const userFound = await userModel.findById(userId as ObjectId);
+                if (!userFound) {
+                    return formatErrorResponse(404, "User Not Found");
+                }
+
+                // Update fields if they exist in updateData
+                if (updateData.display_name !== undefined) {
+                    userFound.display_name = updateData.display_name;
+                }
+                if (updateData.user_name !== undefined) {
+                    userFound.user_name = updateData.user_name;
+                }
+                if (updateData.profile_type !== undefined) {
+                    userFound.profile_type = updateData.profile_type;
+                }
+                if (updateData.spotify_url !== undefined) {
+                    userFound.spotify_url = updateData.spotify_url;
+                }
+                if (updateData.profile_pic !== undefined) {
+                    userFound.profile_pic = updateData.profile_pic;
+                }
+                if (updateData.bio !== undefined) {
+                    userFound.bio = updateData.bio;
+                }
+
+                // Add more fields as necessary
+
+                await userFound.save();
+
+                return formatJSONResponse({
+                    msg: "User Info Updated",
+                });
+            } catch (e) {
+                console.log(e);
+                return formatJSONResponse({
+                    messages: [{ error: e }]
+                });
+            }
+        }
       
     }
 

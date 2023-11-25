@@ -18,8 +18,6 @@ function AwsService() {
     let sv = {
         
         async fetchCredential(parameter){
-            console.log(ssmClient);
-            console.log(AWS.config)
             var params = {
                 Name: parameter
             }

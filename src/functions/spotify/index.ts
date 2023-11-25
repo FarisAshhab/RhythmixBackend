@@ -1,7 +1,8 @@
 import { handlerPath } from '@libs/handler-resolver';
 import {
 	refreshUserSpotifyTokenSchema,
-    fetchMostRecentSongSchema
+    fetchMostRecentSongSchema,
+	fetchProfileSpotifyInfoSchema
 } from "./schema";
 
 /*
@@ -29,7 +30,7 @@ export const refreshUserSpotifyToken = {
 
 /*
 	post method to fetch users most recent played song
-	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+	link : 
 */
 export const fetchMostRecentSong = {
 	handler: `${handlerPath(__dirname)}/handler.FETCH_MOST_RECENT_SONG`,
@@ -42,6 +43,29 @@ export const fetchMostRecentSong = {
 				request: {
 					schemas: {
 						"application/json": fetchMostRecentSongSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+
+/*
+	post method to fetch users info from spotify account to pre populate sign up form
+	link : 
+*/
+export const fetchProfileSpotifyInfo = {
+	handler: `${handlerPath(__dirname)}/handler.FETCH_PROFILE_SPOTIFY_INFO`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/spotify/fetchProfileSpotifyInfo",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": fetchProfileSpotifyInfoSchema,
 					},
 				},
 			},

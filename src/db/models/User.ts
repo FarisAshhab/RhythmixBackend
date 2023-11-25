@@ -18,14 +18,6 @@ const userSchema: Schema = new Schema(
 			type: String,
 			required: true,
 		},
-		first_name: {
-			type: String,
-			required: true,
-		},
-		last_name: {
-			type: String,
-			required: true,
-		},
 		display_name: {
 			type: String,
 			required: true,
@@ -46,6 +38,9 @@ const userSchema: Schema = new Schema(
 			type: String,
 		},
         bio: {
+			type: String
+		},
+		spotify_url: {
 			type: String
 		},
         profile_pic: {
@@ -71,8 +66,6 @@ const userSchema: Schema = new Schema(
 interface IUser extends Document {
 	email: string;
 	password: string;
-	first_name: string;
-	last_name: string;
 	display_name: string;
 	user_name: string;
 	profile_type: string;
@@ -80,6 +73,7 @@ interface IUser extends Document {
     phone_number?: string;
     bio?: string;
     profile_pic?:string;
+	spotify_url?:string
 	spotify_credentials?: ISpotifyCredentials;
 }
 
