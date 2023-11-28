@@ -69,7 +69,9 @@ const userSchema: Schema = new Schema(
                 imageUrl: String,
             },
         ],
-        topGenres: [String]
+        topGenres: [String],
+		followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+		following: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 	},
 	{
 		collection: "user",
@@ -91,6 +93,8 @@ interface IUser extends Document {
 	spotify_credentials?: ISpotifyCredentials;
 	topArtists?: ITopArtist[];
     topGenres?: string[];
+	followers?: ObjectId[];
+    following?: ObjectId[];
 }
 
 export default (models.user

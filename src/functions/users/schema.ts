@@ -74,6 +74,55 @@ export const getUsersByUserNameSchema = {
 
 
 /*
+	This schema is to be followed when following a user
+*/
+export const followUserSchema = {
+	type: "object",
+	properties: {
+		fromUser: { type: "string" }, 
+		toUser: { type: "string" }, 
+		token: { type: "string" }
+	},
+	required: [
+		"fromUser",
+		"toUser",
+		"token"
+	],
+} as const;
+
+
+/*
+	This schema is to be followed when fetching pending follow requests for a user
+*/
+export const fetchPendingFollowRequestsSchema = {
+	type: "object",
+	properties: {
+		userFetching: { type: "string" }, 
+		token: { type: "string" }
+	},
+	required: [
+		"token",
+		"userFetching"
+	],
+} as const;
+
+/*
+	This schema is to be followed when fetching pending follow requests for a user
+*/
+export const acceptFollowRequestSchema = {
+	type: "object",
+	properties: {
+		requestId: { type: "string" }, 
+		token: { type: "string" }
+	},
+	required: [
+		"token",
+		"requestId"
+	],
+} as const;
+
+
+/*
 	This schema is to be followed when a user's profile is updated on rhythmix
 */
 export const updateUserProfileSchema = {
