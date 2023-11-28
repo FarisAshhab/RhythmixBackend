@@ -161,4 +161,53 @@ export const updateUserProfile = {
 };
 
 
+/*
+	get method to check if email passed exists
+	link : 
+*/
+export const checkIfEmailExists = {
+	handler: `${handlerPath(__dirname)}/handler.CHECK_EMAIL_EXISTS`,
+	events: [
+		{
+			http: {
+				method: "get",
+				path: "rhythmix/user/checkEmail/{email}",
+				cors: true,
+				request: {
+					parameters: {
+						paths: {
+							email: true,
+						},
+					},
+				},
+			},
+		},
+	],
+};
+
+
+/*
+	get method to check if username passed exists
+	link : 
+*/
+export const checkIfUserNameExists = {
+	handler: `${handlerPath(__dirname)}/handler.CHECK_USERNAME_EXISTS`,
+	events: [
+		{
+			http: {
+				method: "get",
+				path: "rhythmix/user/checkUserName/{username}",
+				cors: true,
+				request: {
+					parameters: {
+						paths: {
+							username: true,
+						},
+					},
+				},
+			},
+		},
+	],
+};
+
 
