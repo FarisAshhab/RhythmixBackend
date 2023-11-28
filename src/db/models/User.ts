@@ -8,6 +8,12 @@ interface ISpotifyCredentials {
     refresh_token?: string;
 }
 
+interface ITopArtist {
+    name: string;
+    spotifyUrl: string;
+    imageUrl: string;
+}
+
 const userSchema: Schema = new Schema(
 	{
 		email: {
@@ -55,7 +61,15 @@ const userSchema: Schema = new Schema(
                 type: String,
                 required: false 
             }
-        }
+        },
+		topArtists: [
+            {
+                name: String,
+                spotifyUrl: String,
+                imageUrl: String,
+            },
+        ],
+        topGenres: [String]
 	},
 	{
 		collection: "user",
@@ -75,6 +89,8 @@ interface IUser extends Document {
     profile_pic?:string;
 	spotify_url?:string
 	spotify_credentials?: ISpotifyCredentials;
+	topArtists?: ITopArtist[];
+    topGenres?: string[];
 }
 
 export default (models.user

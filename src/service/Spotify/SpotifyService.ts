@@ -79,6 +79,53 @@ function SpotifyService() {
             }
         },
 
+        // Function to get user top artists - will be shown on each users profile page (saved in DB but refreshed every week)
+        async getTopArtistsAndGenres(accessToken: string): Promise<any> {
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`
+            };
+        
+            try {
+                const response: AxiosResponse = await axios.get(`${SPOTIFY_USER_URL}/top/artists?time_range=short_term`, { headers });
+                
+                const top3Genres: Array<string> = await this.getTopGenres(response.data); 
+                const top3Artists = response.data.items.slice(0, 3);
+                // Select specific fields for each artist
+                const formattedArtists = top3Artists.map(artist => ({
+                    name: artist.name,
+                    spotifyUrl: artist.external_urls.spotify,
+                    imageUrl: artist.images[0]?.url  // Use the first image's URL, if available
+                }));
+        
+                return {
+                    topArtists: formattedArtists,
+                    topGenres: top3Genres
+                };
+            } catch (e) {
+                console.error('Error fetching top artists:', e);
+                throw new Error('Failed to fetch top artists');
+            }
+        },
+
+        // function to retrieve users top genres based on the artists they listen to --> there is no direct spotify API to retrieve this info
+        async getTopGenres(spotifyData: any): Promise<any> {
+            const genreCounts: { [genre: string]: number } = {};
+        
+            spotifyData.items.forEach(artist => {
+                artist.genres.forEach(genre => {
+                    if (genreCounts[genre]) {
+                        genreCounts[genre]++;
+                    } else {
+                        genreCounts[genre] = 1;
+                    }
+                });
+            });
+        
+            const sortedGenres = Object.keys(genreCounts).sort((a, b) => genreCounts[b] - genreCounts[a]);
+        
+            return sortedGenres.slice(0, 3);
+        },
+
         // Function to get the spotify profile information - to pre populate create account form after spotify auth
         async getProfileSpotifyInfo(accessToken: string): Promise<any> {
             const headers = {
@@ -106,7 +153,7 @@ function SpotifyService() {
 
         async createLoginURL(state: string): Promise<any> {
             const client_id = await awsService.fetchCredential("CLIENT_ID_SPOTIFY");
-            const scope = 'user-read-private user-read-email user-read-recently-played';
+            const scope = 'user-read-private user-read-email user-read-recently-played user-top-read';
             try {
                 const spotifyAuthUrl = `https://accounts.spotify.com/authorize?${new URLSearchParams({
                     response_type: 'code',
