@@ -9,15 +9,18 @@ import { compare, hash } from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import AwsService from "../../service/Aws/AwsService"
 import userDAO from "src/db/userDAO";
+import SpotifyService from "../../service/Spotify/SpotifyService"
 import {
 	addUserSchema,
 	loginUserSchema,
 	updateUserSpotifyCredsSchema,
-	updateUserProfileSchema
+	updateUserProfileSchema,
+	getUsersByUserNameSchema
 } from './schema';
 
 const userDao = userDAO()
 const awsService = AwsService()
+const spotifyService = SpotifyService()
 
 
 const addUser: ValidatedEventAPIGatewayProxyEvent<
@@ -26,7 +29,12 @@ const addUser: ValidatedEventAPIGatewayProxyEvent<
 	try {
 		context.callbackWaitsForEmptyEventLoop = false;
 		console.log(event.body);
-		const userFound = await userDao.createUser(event.body)
+		let topArtistsAndGenres: object
+		// if spotify_creds --> add them
+		if (event.body?.access_token){
+			topArtistsAndGenres = await spotifyService.getTopArtistsAndGenres(event.body?.access_token);
+		}
+		const userFound = await userDao.createUser(event.body, topArtistsAndGenres)
 		console.log(userFound)
 		let userInfo = JSON.parse(userFound.body)
 		console.log("userInfo")
@@ -73,6 +81,54 @@ const getUserByToken: ValidatedEventAPIGatewayProxyEvent<any> = async (
 		}
 		context.callbackWaitsForEmptyEventLoop = false;
 		const userFound = await userDao.getUserById(authenticatedEvent.body)
+		return formatJSONResponse({ user: userFound });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+/*
+	tasks: fetches users valid under certain username passed in
+	returns: user objects or error
+	params: event and context
+*/
+const getUsersByUserName: ValidatedEventAPIGatewayProxyEvent<
+typeof getUsersByUserNameSchema
+> = async (event, context) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const usersFound = await userDao.findUsersByUsername(authenticatedEvent.body.name)
+		return formatJSONResponse({ users: usersFound });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+/*
+	tasks: fetches users valid under certain username passed in
+	returns: user objects or error
+	params: event and context
+*/
+const getExactUserByUserName: ValidatedEventAPIGatewayProxyEvent<
+typeof getUsersByUserNameSchema
+> = async (event, context) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const userFound = await userDao.getExactUserByUsername(authenticatedEvent.body.name)
 		return formatJSONResponse({ user: userFound });
 	} catch (e) {
 		console.log(e);
@@ -168,6 +224,8 @@ const updateUserProfile: ValidatedEventAPIGatewayProxyEvent<
 
 export const ADD_USER = middyfy(addUser);
 export const GET_USER = middyfy(getUserByToken);
+export const GET_USERS_SEARCH = middyfy(getUsersByUserName);
+export const GET_EXACT_USER_SEARCH = middyfy(getExactUserByUserName);
 export const LOGIN = middyfy(loginUser);
 export const UPDATE_USER_SPOTIFY_CREDS = middyfy(updateUserSpotifyCreds);
 export const UPDATE_USER_ACCOUNT = middyfy(updateUserProfile);
