@@ -331,7 +331,31 @@ function userDAO() {
                     messages: [{ error: e }]
                 });
             }
+        },
+
+        async checkEmailExists(email: string) {
+            try {
+                await connectMongo();
+                const emailExists = await userModel.exists({ email: email.toLowerCase() });
+                return formatJSONResponse({ emailExists: !!emailExists });
+            } catch (e) {
+                console.log(e);
+                return formatErrorResponse(500, "Server Error");
+            }
+        },
+
+        async checkUsernameExists(username: string) {
+            try {
+                await connectMongo();
+                const userExists = await userModel.exists({ user_name: new RegExp("^" + username + "$", "i") });
+                return formatJSONResponse({ usernameExists: !!userExists });
+            } catch (e) {
+                console.log(e);
+                return formatErrorResponse(500, "Server Error");
+            }
         }
+        
+        
       
     }
 
