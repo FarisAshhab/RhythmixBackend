@@ -34,10 +34,10 @@ export const addUserSchema = {
 export const loginUserSchema = {
 	type: "object",
 	properties: {
-		email: { type: "string", format: "email" },
+		emailOrUsername: { type: "string" },
 		password: { type: "string" },
 	},
-	required: ["email", "password"],
+	required: ["emailOrUsername", "password"],
 } as const;
 
 /*
@@ -53,6 +53,21 @@ export const updateUserSpotifyCredsSchema = {
 	required: [
 		"access_token",
         "refresh_token",
+		"token"
+	],
+} as const;
+
+/*
+	This schema is to be followed when searching for users by usernames'
+*/
+export const getUsersByUserNameSchema = {
+	type: "object",
+	properties: {
+		name: { type: "string" }, // references username
+		token: { type: "string" }
+	},
+	required: [
+		"name",
 		"token"
 	],
 } as const;

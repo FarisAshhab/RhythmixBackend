@@ -3,7 +3,8 @@ import {
 	addUserSchema,
 	loginUserSchema,
 	updateUserSpotifyCredsSchema,
-	updateUserProfileSchema
+	updateUserProfileSchema,
+	getUsersByUserNameSchema
 } from "./schema";
 
 export const addUser = {
@@ -24,6 +25,10 @@ export const addUser = {
 	],
 };
 
+/*
+	get method to fetch user by session token (current user)
+	link : 
+*/
 export const getUserByToken = {
 	handler: `${handlerPath(__dirname)}/handler.GET_USER`,
 	events: [
@@ -37,6 +42,50 @@ export const getUserByToken = {
 						paths: {
 							token: true,
 						},
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to fetch users by username
+	link : 
+*/
+export const getUsersByUserName = {
+	handler: `${handlerPath(__dirname)}/handler.GET_USERS_SEARCH`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/searchUsers",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": getUsersByUserNameSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to fetch users by username
+	link : 
+*/
+export const getExactUserByUserName = {
+	handler: `${handlerPath(__dirname)}/handler.GET_EXACT_USER_SEARCH`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/searchExactUser",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": getUsersByUserNameSchema,
 					},
 				},
 			},
