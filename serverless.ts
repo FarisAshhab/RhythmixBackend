@@ -10,7 +10,10 @@ import {
   getUsersByUserName,
   getExactUserByUserName,
   checkIfUserNameExists,
-  checkIfEmailExists
+  checkIfEmailExists,
+  followUser,
+  fetchPendingFollowRequests,
+  acceptFollowRequest
  } from '@functions/users';
 
  import { 
@@ -53,7 +56,10 @@ const serverlessConfiguration: AWS = {
     getUsersByUserName,
     getExactUserByUserName,
     checkIfUserNameExists,
-    checkIfEmailExists
+    checkIfEmailExists,
+    followUser,
+    fetchPendingFollowRequests,
+    acceptFollowRequest
   },
   package: { individually: true },
   custom: {

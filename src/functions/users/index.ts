@@ -4,7 +4,10 @@ import {
 	loginUserSchema,
 	updateUserSpotifyCredsSchema,
 	updateUserProfileSchema,
-	getUsersByUserNameSchema
+	getUsersByUserNameSchema,
+	followUserSchema,
+	fetchPendingFollowRequestsSchema,
+	acceptFollowRequestSchema
 } from "./schema";
 
 export const addUser = {
@@ -137,6 +140,72 @@ export const updateUserSpotifyCreds = {
 	],
 };
 
+
+/*
+	post method to follow a user
+	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+*/
+export const followUser = {
+	handler: `${handlerPath(__dirname)}/handler.FOLLOW_USER`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/followUser",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": followUserSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method fetch all pending requests for a user
+	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+*/
+export const fetchPendingFollowRequests = {
+	handler: `${handlerPath(__dirname)}/handler.FETCH_PENDING_FOLLOW_REQUESTS`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/fetchPendingRequests",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": fetchPendingFollowRequestsSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to accept a follow request to a private user by requestId
+	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+*/
+export const acceptFollowRequest = {
+	handler: `${handlerPath(__dirname)}/handler.ACCEPT_FOLLOW_REQUEST`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/acceptFollowRequest",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": acceptFollowRequestSchema,
+					},
+				},
+			},
+		},
+	],
+};
 
 /*
 	post method to update a user object in DB
