@@ -14,10 +14,9 @@ import { decrypt, encrypt } from "src/middleware/auth";
 import { sign } from "jsonwebtoken";
 
 import { default as userModel } from "./models/User";
+import { default as followRequestModel } from "./models/FollowRequests";
 
 dotenv.config()
-const DB_BASE = MONGO_URL
-
 
 function userDAO() {
 
@@ -173,7 +172,12 @@ function userDAO() {
                             profile_type: 1,
                             profile_pic: 1,
                             spotify_url: 1,
-                            bio: 1
+                            bio: 1,
+                            followersCount: { $size: "$followers" }, // Calculates the length of followers array
+                            followingCount: { $size: "$following" }, // Calculates the length of following array
+                            _id: 1,
+                            topArtists: 1,
+                            topGenres: 1,
                         },
                     },
                 ]);
@@ -242,7 +246,9 @@ function userDAO() {
                         profile_type: 1,
                         spotify_url: 1,
                         topArtists: 1,
-                        topGenres: 1
+                        topGenres: 1,
+                        followersCount: { $size: "$followers" }, // Calculates the length of followers array
+                        followingCount: { $size: "$following" }, // Calculates the length of following array
                     } // Projection
                 );
 
@@ -288,6 +294,48 @@ function userDAO() {
             }
         },
 
+        async updateAllFollowRequestsToAccepted(userId: string) {
+            try {
+                await connectMongo();
+                
+                // Fetch all pending follow requests for this user
+                const pendingRequests = await followRequestModel.find({ toUser: userId, status: 'pending' }).exec();
+                console.log("pendingRequests:::")
+                console.log(pendingRequests)
+                for (const request of pendingRequests) {
+                    // Update each follow request to 'accepted'
+                    request.status = 'accepted';
+                    await request.save();
+        
+                    // Update followers and following for each user involved
+                    const fromUser = await userModel.findById(request.fromUser);
+                    const toUser = await userModel.findById(request.toUser);
+        
+                    if (!fromUser || !toUser) {
+                        throw new Error('One of the users not found');
+                    }
+        
+                    if (!fromUser.following.includes(toUser._id)) {
+                        fromUser.following.push(toUser._id);
+                    }
+        
+                    if (!toUser.followers.includes(fromUser._id)) {
+                        toUser.followers.push(fromUser._id);
+                    }
+        
+                    await fromUser.save();
+                    await toUser.save();
+        
+                    // Optional: Create notification for accepted follow request
+                }
+        
+                return 'All follow requests updated to accepted';
+            } catch (e) {
+                console.error(e);
+                throw new Error('Error updating follow requests to accepted');
+            }
+        },
+
         async updateUserInfo(userId: string, updateData: any) {
             try {
                 await connectMongo();
@@ -297,6 +345,7 @@ function userDAO() {
                 if (!userFound) {
                     return formatErrorResponse(404, "User Not Found");
                 }
+                let wasPrivate = userFound.profile_type === 'private';
 
                 // Update fields if they exist in updateData
                 if (updateData.display_name !== undefined) {
@@ -321,6 +370,12 @@ function userDAO() {
                 // Add more fields as necessary
 
                 await userFound.save();
+
+                // If profile was private and is now being set to public, update follow requests
+                if (wasPrivate && updateData.profile_type === 'public') {
+                    console.log("accepting all user follow requests --> switched to public account")
+                    await this.updateAllFollowRequestsToAccepted(userId);
+                }
 
                 return formatJSONResponse({
                     msg: "User Info Updated",

@@ -9,16 +9,21 @@ import { compare, hash } from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import AwsService from "../../service/Aws/AwsService"
 import userDAO from "src/db/userDAO";
+import followRequestsDAO from "src/db/followRequestDAO";
 import SpotifyService from "../../service/Spotify/SpotifyService"
 import {
 	addUserSchema,
 	loginUserSchema,
 	updateUserSpotifyCredsSchema,
 	updateUserProfileSchema,
-	getUsersByUserNameSchema
+	getUsersByUserNameSchema,
+	followUserSchema,
+	fetchPendingFollowRequestsSchema,
+	acceptFollowRequestSchema
 } from './schema';
 
 const userDao = userDAO()
+const followRequestsDao = followRequestsDAO()
 const awsService = AwsService()
 const spotifyService = SpotifyService()
 
@@ -145,6 +150,11 @@ const loginUser: ValidatedEventAPIGatewayProxyEvent<
 		context.callbackWaitsForEmptyEventLoop = false;
 		const userFound = await userDao.loginUser(event.body)
 		let userInfo = JSON.parse(userFound.body)
+		// Check if the user information is correctly retrieved
+		if (!userInfo || !userInfo.userFound || !userInfo.userFound._id) {
+			// Return a 401 Unauthorized response if the user is not found or the structure is incorrect
+			return formatErrorResponse(401, "Authentication failed: Incorrect credentials");
+		}
 		const payload = {
 			user: {
 				id: userInfo.userFound._id,
@@ -165,9 +175,15 @@ const loginUser: ValidatedEventAPIGatewayProxyEvent<
 
 	} catch (e) {
 		console.log(e);
-		return formatJSONResponse({
-		messages: [{ error: e }]
-		});
+		
+		// Check if the error is due to incorrect password
+		if (e && e.statusCode === 401) {
+			// Return a specific error response for incorrect password
+			return formatErrorResponse(401, "Authentication failed: Incorrect password");
+		}
+	
+		// Handle other errors
+		return formatErrorResponse(500, "An error occurred during the login process");
 	}
 };
 
@@ -223,6 +239,92 @@ const updateUserProfile: ValidatedEventAPIGatewayProxyEvent<
 
 
 /*
+	tasks: follow a user/ will send a follow request if user profile is private
+	returns: 
+	params: event and context
+*/
+const followUser: ValidatedEventAPIGatewayProxyEvent<
+	typeof followUserSchema
+> = async (event, context) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		if ( authenticatedEvent.body.user !== authenticatedEvent.body.fromUser) {
+			return formatErrorResponse(401, "Incorrect fromUser passed");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const follow = await followRequestsDao.handleFollowRequest(authenticatedEvent.body.fromUser, authenticatedEvent.body.toUser);
+		let response = JSON.parse(follow.body);
+		return formatJSONResponse({ user: response.msg });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+/*
+	tasks: fetches all pending follow requests for a user with a private account
+	returns: 
+	params: event and context
+*/
+const fetchPendingFollowRequests: ValidatedEventAPIGatewayProxyEvent<
+	typeof fetchPendingFollowRequestsSchema
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		if ( authenticatedEvent.body.user !== authenticatedEvent.body.userFetching) {
+			return formatErrorResponse(401, "Incorrect userFetching passed, doesnt match token user");
+		}
+        const userId = authenticatedEvent.body.user;
+
+        context.callbackWaitsForEmptyEventLoop = false;
+        const pendingRequests = await followRequestsDao.getPendingFollowRequests(userId);
+        return formatJSONResponse({ requests: pendingRequests });
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while fetching follow requests' }]
+        });
+    }
+};
+
+
+/*
+	tasks: accepts a follow request and adds users as following/followers
+	returns: 
+	params: event and context
+*/
+const acceptFollowRequest: ValidatedEventAPIGatewayProxyEvent<
+	typeof acceptFollowRequestSchema
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+
+        const requestId = authenticatedEvent.body.requestId;
+        context.callbackWaitsForEmptyEventLoop = false;
+        const result = await followRequestsDao.acceptFollowRequest(requestId);
+        return formatJSONResponse({ message: result });
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while accepting the follow request' }]
+        });
+    }
+};
+
+
+
+/*
 	tasks: checks if email is already being used
 	returns: boolean
 	params: event and context
@@ -274,6 +376,9 @@ export const GET_USER = middyfy(getUserByToken);
 export const CHECK_EMAIL_EXISTS = middyfy(checkIfEmailExists);
 export const CHECK_USERNAME_EXISTS = middyfy(checkIfUserNameExists);
 export const GET_USERS_SEARCH = middyfy(getUsersByUserName);
+export const FOLLOW_USER = middyfy(followUser);
+export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
+export const ACCEPT_FOLLOW_REQUEST = middyfy(acceptFollowRequest);
 export const GET_EXACT_USER_SEARCH = middyfy(getExactUserByUserName);
 export const LOGIN = middyfy(loginUser);
 export const UPDATE_USER_SPOTIFY_CREDS = middyfy(updateUserSpotifyCreds);
