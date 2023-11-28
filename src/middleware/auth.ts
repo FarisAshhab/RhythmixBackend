@@ -28,6 +28,32 @@ export const auth = async (event) => {
 	return event;
 };
 
+export const authTwo = async (event) => {
+    try {
+        const secretKey = await awsService.fetchCredential("JWT_SECRETKEY");
+
+        let token;
+        if (event.httpMethod === "POST" && event.body && event.body.token) {
+            token = event.body.token;
+        } else if (event.httpMethod === "GET") {
+            const tokenHeader = event.headers.Authorization || event.headers.authorization;
+            if (tokenHeader) {
+                token = tokenHeader.split(' ')[1]; // Assuming the header is 'Bearer [token]'
+            }
+        }
+
+        if (!token) {
+            throw new Error("No token provided");
+        }
+
+        const decoded = verify(token, secretKey);
+        return decoded; // Returns the decoded token
+    } catch (error) {
+        console.error("Unauthorized Token:", error);
+        throw new Error("Unauthorized: Invalid token");
+    }
+};
+
 export const encrypt = async (text: any) => {
 	try {
         console.log("encrypting text")

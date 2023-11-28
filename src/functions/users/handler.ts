@@ -222,8 +222,57 @@ const updateUserProfile: ValidatedEventAPIGatewayProxyEvent<
 };
 
 
+/*
+	tasks: checks if email is already being used
+	returns: boolean
+	params: event and context
+*/
+const checkIfEmailExists: ValidatedEventAPIGatewayProxyEvent<any> = async (
+	event,
+	context
+) => {
+	try {
+		context.callbackWaitsForEmptyEventLoop = false;
+		// Access email from path parameters
+		const email = event.pathParameters.email;
+		const check = await userDao.checkEmailExists(email);
+		return formatJSONResponse({ exists: check });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+/*
+	tasks: checks if username is already being used
+	returns: boolean
+	params: event and context
+*/
+const checkIfUserNameExists: ValidatedEventAPIGatewayProxyEvent<any> = async (
+	event,
+	context
+) => {
+	try {
+		context.callbackWaitsForEmptyEventLoop = false;
+		// Access email from path parameters
+		const username = event.pathParameters.username;
+		const check = await userDao.checkUsernameExists(username);
+		return formatJSONResponse({ exists: check });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+
 export const ADD_USER = middyfy(addUser);
 export const GET_USER = middyfy(getUserByToken);
+export const CHECK_EMAIL_EXISTS = middyfy(checkIfEmailExists);
+export const CHECK_USERNAME_EXISTS = middyfy(checkIfUserNameExists);
 export const GET_USERS_SEARCH = middyfy(getUsersByUserName);
 export const GET_EXACT_USER_SEARCH = middyfy(getExactUserByUserName);
 export const LOGIN = middyfy(loginUser);

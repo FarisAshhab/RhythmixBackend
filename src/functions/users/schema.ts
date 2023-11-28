@@ -58,12 +58,12 @@ export const updateUserSpotifyCredsSchema = {
 } as const;
 
 /*
-	This schema is to be followed when searching for users by usernames'
+	This schema is to be followed when searching for users by usernames or displaynames'
 */
 export const getUsersByUserNameSchema = {
 	type: "object",
 	properties: {
-		name: { type: "string" }, // references username
+		name: { type: "string" }, 
 		token: { type: "string" }
 	},
 	required: [

@@ -8,7 +8,9 @@ import {
   updateUserSpotifyCreds,
   updateUserProfile,
   getUsersByUserName,
-  getExactUserByUserName
+  getExactUserByUserName,
+  checkIfUserNameExists,
+  checkIfEmailExists
  } from '@functions/users';
 
  import { 
@@ -49,7 +51,9 @@ const serverlessConfiguration: AWS = {
     fetchProfileSpotifyInfo,
     updateUserProfile,
     getUsersByUserName,
-    getExactUserByUserName
+    getExactUserByUserName,
+    checkIfUserNameExists,
+    checkIfEmailExists
   },
   package: { individually: true },
   custom: {
