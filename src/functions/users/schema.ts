@@ -72,6 +72,51 @@ export const getUsersByUserNameSchema = {
 	],
 } as const;
 
+/*
+	This schema is to be followed when searching for a users followers list
+*/
+export const getUserFollowersSchema = {
+	type: "object",
+	properties: {
+		userId: { type: "string" }, 
+		token: { type: "string" }
+	},
+	required: [
+		"userId",
+		"token"
+	],
+} as const;
+
+/*
+	This schema is to be followed when searching for a users following list
+*/
+export const getUserFollowingSchema = {
+	type: "object",
+	properties: {
+		userId: { type: "string" }, 
+		token: { type: "string" }
+	},
+	required: [
+		"userId",
+		"token"
+	],
+} as const;
+
+/*
+	This schema is to be followed when searching for users by usernames or displaynames'
+*/
+export const getExactUserByIdSchema = {
+	type: "object",
+	properties: {
+		getUser: { type: "string" }, 
+		token: { type: "string" }
+	},
+	required: [
+		"getUser",
+		"token"
+	],
+} as const;
+
 
 /*
 	This schema is to be followed when following a user

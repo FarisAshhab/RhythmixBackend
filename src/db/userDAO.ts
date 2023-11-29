@@ -148,15 +148,6 @@ function userDAO() {
         async getUserById(id: string){
             try {
                 await connectMongo();
-                console.log(id);
-
-                const userFound = await userModel.findById(id as ObjectId);
-                console.log("userFound")
-                console.log(userFound)
-                if (!userFound) {
-                    return formatErrorResponse(404, "User Not Found");
-                }
-
                 // this is used to filter out any fields we dont want to return like (password), we can also query other collections here if needed moving forward
                 const userResultFound = await userModel.aggregate([
                     {
@@ -229,41 +220,159 @@ function userDAO() {
             }
         },
 
-        async getExactUserByUsername(username: string) {
+        async getFollowersOfUserList(id: string) {
             try {
                 await connectMongo();
-                console.log(username);
+                console.log("Fetching followers for user ID:", id);
         
-                // Case-insensitive search for user_name with specific fields in the projection
-                const userFound = await userModel.findOne(
-                    { user_name: { $regex: new RegExp("^" + username + "$", "i") } },
-                    { 
-                        _id: 1,
-                        display_name: 1, 
-                        user_name: 1, 
-                        profile_pic: 1,
-                        bio: 1,
-                        profile_type: 1,
-                        spotify_url: 1,
-                        topArtists: 1,
-                        topGenres: 1,
-                        followersCount: { $size: "$followers" }, // Calculates the length of followers array
-                        followingCount: { $size: "$following" }, // Calculates the length of following array
-                    } // Projection
-                );
-
-                if (!userFound) {
-                    return formatErrorResponse(404, "User Not Found");
-                }
-
-                return formatJSONResponse({ user: userFound });
+                const followersInfo = await userModel.aggregate([
+                    {
+                        $match: {
+                            _id: new ObjectId(id as string),
+                        },
+                    },
+                    {
+                        $unwind: "$followers" // Deconstruct the followers array
+                    },
+                    {
+                        $lookup: {
+                            from: "user", // Replace with your user collection name
+                            localField: "followers",
+                            foreignField: "_id",
+                            as: "followerDetails"
+                        }
+                    },
+                    {
+                        $unwind: "$followerDetails" // Deconstruct the result of the lookup
+                    },
+                    {
+                        $project: {
+                            _id: "$followerDetails._id",
+                            display_name: "$followerDetails.display_name",
+                            user_name: "$followerDetails.user_name",
+                            profile_pic: "$followerDetails.profile_pic"
+                        }
+                    }
+                ]).exec();
+        
+                return formatJSONResponse({ followers: followersInfo });
             } catch (e) {
-                console.log(e);
+                console.error(e);
                 return formatJSONResponse({
-                    messages: [{ error: e }]
+                    messages: [{ error: e.message || "An error occurred during the retrieval process" }]
                 });
             }
         },
+        
+        async getUserFollowingList(id: string) {
+            try {
+                await connectMongo();
+                console.log("Fetching followers for user ID:", id);
+        
+                const followersInfo = await userModel.aggregate([
+                    {
+                        $match: {
+                            _id: new ObjectId(id as string),
+                        },
+                    },
+                    {
+                        $unwind: "$following" // Deconstruct the following array
+                    },
+                    {
+                        $lookup: {
+                            from: "user", // Replace with your user collection name
+                            localField: "following",
+                            foreignField: "_id",
+                            as: "followingDetails"
+                        }
+                    },
+                    {
+                        $unwind: "$followingDetails" // Deconstruct the result of the lookup
+                    },
+                    {
+                        $project: {
+                            _id: "$followingDetails._id",
+                            display_name: "$followingDetails.display_name",
+                            user_name: "$followingDetails.user_name",
+                            profile_pic: "$followingDetails.profile_pic"
+                        }
+                    }
+                ]).exec();
+        
+                return formatJSONResponse({ following: followersInfo });
+            } catch (e) {
+                console.error(e);
+                return formatJSONResponse({
+                    messages: [{ error: e.message || "An error occurred during the retrieval process" }]
+                });
+            }
+        },
+
+        async getExactUserById(id: string, requestingUserId: string) {
+            try {
+                await connectMongo();
+                console.log(id);
+        
+                const userResult = await userModel.aggregate([
+                    { 
+                        $match: {
+                            _id: new ObjectId(id),
+                        },
+                    },
+                    {
+                        $addFields: {
+                            isFollower: { $in: [new ObjectId(requestingUserId), "$followers"] }
+                        }
+                    },
+                    { 
+                        $project: {
+                            _id: 1,
+                            display_name: 1, 
+                            user_name: 1, 
+                            profile_pic: 1,
+                            bio: 1,
+                            profile_type: 1,
+                            spotify_url: { 
+                                $cond: { 
+                                    if: { $or: [{ $eq: ["$profile_type", "public"] }, "$isFollower"] },
+                                    then: "$spotify_url",
+                                    else: "$$REMOVE"
+                                }
+                            },
+                            topArtists: { 
+                                $cond: { 
+                                    if: { $or: [{ $eq: ["$profile_type", "public"] }, "$isFollower"] },
+                                    then: "$topArtists",
+                                    else: "$$REMOVE"
+                                }
+                            },
+                            topGenres: { 
+                                $cond: { 
+                                    if: { $or: [{ $eq: ["$profile_type", "public"] }, "$isFollower"] },
+                                    then: "$topGenres",
+                                    else: "$$REMOVE"
+                                }
+                            },
+                            followersCount: { $size: "$followers" },
+                            followingCount: { $size: "$following" },
+                            isFollower: "$isFollower"
+                        }
+                    }
+                ]);
+                
+                if (userResult.length === 0) {
+                    return formatErrorResponse(404, "User Not Found");
+                }
+        
+                return formatJSONResponse({ user: userResult[0] });
+            } catch (e) {
+                console.log(e);
+                return formatJSONResponse({
+                    messages: [{ error: e.message || "An error occurred during the user retrieval process" }]
+                });
+            }
+        },
+        
         
         async updateUserSpotifyCreds(id: string, access_token: string, refresh_token: string){
             try {

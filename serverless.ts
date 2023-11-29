@@ -8,12 +8,14 @@ import {
   updateUserSpotifyCreds,
   updateUserProfile,
   getUsersByUserName,
-  getExactUserByUserName,
+  getExactUserById,
   checkIfUserNameExists,
   checkIfEmailExists,
   followUser,
   fetchPendingFollowRequests,
-  acceptFollowRequest
+  acceptFollowRequest,
+  getUserFollowers,
+  getUserFollowing
  } from '@functions/users';
 
  import { 
@@ -54,12 +56,14 @@ const serverlessConfiguration: AWS = {
     fetchProfileSpotifyInfo,
     updateUserProfile,
     getUsersByUserName,
-    getExactUserByUserName,
+    getExactUserById,
     checkIfUserNameExists,
     checkIfEmailExists,
     followUser,
     fetchPendingFollowRequests,
-    acceptFollowRequest
+    acceptFollowRequest,
+    getUserFollowers,
+    getUserFollowing
   },
   package: { individually: true },
   custom: {
