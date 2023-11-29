@@ -7,7 +7,10 @@ import {
 	getUsersByUserNameSchema,
 	followUserSchema,
 	fetchPendingFollowRequestsSchema,
-	acceptFollowRequestSchema
+	acceptFollowRequestSchema,
+	getExactUserByIdSchema,
+	getUserFollowersSchema,
+	getUserFollowingSchema
 } from "./schema";
 
 export const addUser = {
@@ -78,7 +81,7 @@ export const getUsersByUserName = {
 	post method to fetch users by username
 	link : 
 */
-export const getExactUserByUserName = {
+export const getExactUserById = {
 	handler: `${handlerPath(__dirname)}/handler.GET_EXACT_USER_SEARCH`,
 	events: [
 		{
@@ -88,7 +91,7 @@ export const getExactUserByUserName = {
 				cors: true,
 				request: {
 					schemas: {
-						"application/json": getUsersByUserNameSchema,
+						"application/json": getExactUserByIdSchema,
 					},
 				},
 			},
@@ -206,6 +209,51 @@ export const acceptFollowRequest = {
 		},
 	],
 };
+
+/*
+	post method to fetch users followers
+	link : 
+*/
+export const getUserFollowers = {
+	handler: `${handlerPath(__dirname)}/handler.GET_USER_FOLLOWERS`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/getUserFollowers",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": getUserFollowersSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to fetch users following
+	link : 
+*/
+export const getUserFollowing = {
+	handler: `${handlerPath(__dirname)}/handler.GET_USER_FOLLOWING`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/getUserFollowing",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": getUserFollowingSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
 
 /*
 	post method to update a user object in DB

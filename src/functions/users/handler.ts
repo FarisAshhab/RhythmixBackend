@@ -19,7 +19,10 @@ import {
 	getUsersByUserNameSchema,
 	followUserSchema,
 	fetchPendingFollowRequestsSchema,
-	acceptFollowRequestSchema
+	acceptFollowRequestSchema,
+	getExactUserByIdSchema,
+	getUserFollowersSchema,
+	getUserFollowingSchema
 } from './schema';
 
 const userDao = userDAO()
@@ -120,12 +123,12 @@ typeof getUsersByUserNameSchema
 };
 
 /*
-	tasks: fetches users valid under certain username passed in
+	tasks: fetches all followers for a specific user and returns minimal info for each
 	returns: user objects or error
 	params: event and context
 */
-const getExactUserByUserName: ValidatedEventAPIGatewayProxyEvent<
-typeof getUsersByUserNameSchema
+const getUserFollowers: ValidatedEventAPIGatewayProxyEvent<
+typeof getUserFollowersSchema
 > = async (event, context) => {
 	try {
 		const authenticatedEvent = await auth(event);
@@ -133,7 +136,57 @@ typeof getUsersByUserNameSchema
 			return formatErrorResponse(401, "Token is not valid");
 		}
 		context.callbackWaitsForEmptyEventLoop = false;
-		const userFound = await userDao.getExactUserByUsername(authenticatedEvent.body.name)
+		const followersFound = await userDao.getFollowersOfUserList(authenticatedEvent.body.userId)
+		return formatJSONResponse({ followersFound });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+
+/*
+	tasks: fetches all followers for a specific user and returns minimal info for each
+	returns: user objects or error
+	params: event and context
+*/
+const getUserFollowing: ValidatedEventAPIGatewayProxyEvent<
+typeof getUserFollowingSchema
+> = async (event, context) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const followingFound = await userDao.getUserFollowingList(authenticatedEvent.body.userId)
+		return formatJSONResponse({ followingFound });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+
+/*
+	tasks: fetches users valid under certain username passed in
+	returns: user objects or error
+	params: event and context
+*/
+const getExactUserById: ValidatedEventAPIGatewayProxyEvent<
+typeof getExactUserByIdSchema
+> = async (event, context) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const userFound = await userDao.getExactUserById(authenticatedEvent.body.getUser, authenticatedEvent.body.user)
 		return formatJSONResponse({ user: userFound });
 	} catch (e) {
 		console.log(e);
@@ -379,7 +432,9 @@ export const GET_USERS_SEARCH = middyfy(getUsersByUserName);
 export const FOLLOW_USER = middyfy(followUser);
 export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
 export const ACCEPT_FOLLOW_REQUEST = middyfy(acceptFollowRequest);
-export const GET_EXACT_USER_SEARCH = middyfy(getExactUserByUserName);
+export const GET_USER_FOLLOWERS = middyfy(getUserFollowers);
+export const GET_USER_FOLLOWING = middyfy(getUserFollowing);
+export const GET_EXACT_USER_SEARCH = middyfy(getExactUserById);
 export const LOGIN = middyfy(loginUser);
 export const UPDATE_USER_SPOTIFY_CREDS = middyfy(updateUserSpotifyCreds);
 export const UPDATE_USER_ACCOUNT = middyfy(updateUserProfile);
