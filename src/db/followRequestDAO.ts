@@ -1,6 +1,5 @@
 import * as dotenv from 'dotenv'
 import connectMongo from "./connectMongo";
-import mongoose, { connect } from "mongoose";
 import { Types } from 'mongoose';
 import { ObjectId } from "mongoose/lib/types";
 import {

@@ -9,6 +9,7 @@ import AwsService from "../../service/Aws/AwsService"
 import SpotifyService from "../../service/Spotify/SpotifyService"
 import { auth, decrypt, encrypt, generateRandomString } from "src/middleware/auth";
 import userDAO from "src/db/userDAO";
+import postDAO from "src/db/postDAO";
 import {
     refreshUserSpotifyTokenSchema,
     fetchMostRecentSongSchema,
@@ -17,6 +18,7 @@ import {
 
 const userDao = userDAO()
 const spotifyService = SpotifyService()
+const postDao = postDAO()
 
 
 const refreshUserSpotifyToken: ValidatedEventAPIGatewayProxyEvent<
@@ -62,9 +64,12 @@ const fetchMostRecentSong: ValidatedEventAPIGatewayProxyEvent<
 		const mostRecentSong = await spotifyService.getMostRecentlyPlayedSong(decryptedAccessToken);
         console.log(mostRecentSong)
         console.log(event.body.user)
+
         // check if song is in db --> add it if not
 		// create post Object in Database
-		return formatJSONResponse({ mostRecentSong: mostRecentSong });
+		const postCreated = await postDao.createPost(event.body.user, mostRecentSong)
+
+		return formatJSONResponse({ post: postCreated });
 	} catch (e) {
 		console.log(e);
 		return formatJSONResponse({
