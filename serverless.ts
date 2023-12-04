@@ -15,7 +15,8 @@ import {
   fetchPendingFollowRequests,
   acceptFollowRequest,
   getUserFollowers,
-  getUserFollowing
+  getUserFollowing,
+  fetchPosts
  } from '@functions/users';
 
  import { 
@@ -63,7 +64,8 @@ const serverlessConfiguration: AWS = {
     fetchPendingFollowRequests,
     acceptFollowRequest,
     getUserFollowers,
-    getUserFollowing
+    getUserFollowing,
+    fetchPosts
   },
   package: { individually: true },
   custom: {

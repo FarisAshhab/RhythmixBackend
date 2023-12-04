@@ -22,10 +22,13 @@ import {
 	acceptFollowRequestSchema,
 	getExactUserByIdSchema,
 	getUserFollowersSchema,
-	getUserFollowingSchema
+	getUserFollowingSchema,
+	fetchPostsSchema
 } from './schema';
+import postDAO from "src/db/postDAO";
 
 const userDao = userDAO()
+const postDao = postDAO()
 const followRequestsDao = followRequestsDAO()
 const awsService = AwsService()
 const spotifyService = SpotifyService()
@@ -423,6 +426,36 @@ const checkIfUserNameExists: ValidatedEventAPIGatewayProxyEvent<any> = async (
 	}
 };
 
+/*
+    tasks: fetches posts for a user's feed
+    returns: 
+    params: event and context
+*/
+const fetchPosts: ValidatedEventAPIGatewayProxyEvent<
+    typeof fetchPostsSchema
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+
+        const userId = authenticatedEvent.body.user;
+        const lastPostTimestamp = authenticatedEvent.body.lastPostTimestamp;
+        const limit = authenticatedEvent.body.limit || 20;
+
+        context.callbackWaitsForEmptyEventLoop = false;
+        const posts = await postDao.fetchPosts(userId, lastPostTimestamp, limit);
+        return formatJSONResponse({ posts });
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while fetching posts' }]
+        });
+    }
+};
+
+
 
 export const ADD_USER = middyfy(addUser);
 export const GET_USER = middyfy(getUserByToken);
@@ -431,6 +464,7 @@ export const CHECK_USERNAME_EXISTS = middyfy(checkIfUserNameExists);
 export const GET_USERS_SEARCH = middyfy(getUsersByUserName);
 export const FOLLOW_USER = middyfy(followUser);
 export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
+export const FETCH_POSTS = middyfy(fetchPosts);
 export const ACCEPT_FOLLOW_REQUEST = middyfy(acceptFollowRequest);
 export const GET_USER_FOLLOWERS = middyfy(getUserFollowers);
 export const GET_USER_FOLLOWING = middyfy(getUserFollowing);

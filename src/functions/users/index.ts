@@ -10,7 +10,8 @@ import {
 	acceptFollowRequestSchema,
 	getExactUserByIdSchema,
 	getUserFollowersSchema,
-	getUserFollowingSchema
+	getUserFollowingSchema,
+	fetchPostsSchema
 } from "./schema";
 
 export const addUser = {
@@ -326,5 +327,29 @@ export const checkIfUserNameExists = {
 		},
 	],
 };
+
+
+/*
+    post method to fetch posts for a user's feed
+    link : [your API link]
+*/
+export const fetchPosts = {
+    handler: `${handlerPath(__dirname)}/handler.FETCH_POSTS`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/fetchPosts",
+                cors: true,
+                request: {
+                    schemas: {
+                        "application/json": fetchPostsSchema,
+                    },
+                },
+            },
+        },
+    ],
+};
+
 
 
