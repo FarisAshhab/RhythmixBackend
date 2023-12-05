@@ -124,8 +124,7 @@ const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<
   
 	  //logic to verify the state value
 	  const tokens = await spotifyService.exchangeCodeForTokens(code);
-	  console.log("tokens")
-	  console.log(tokens)
+	  
 	  
   
 	  return {

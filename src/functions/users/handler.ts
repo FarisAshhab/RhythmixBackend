@@ -48,8 +48,6 @@ const addUser: ValidatedEventAPIGatewayProxyEvent<
 		const userFound = await userDao.createUser(event.body, topArtistsAndGenres)
 		console.log(userFound)
 		let userInfo = JSON.parse(userFound.body)
-		console.log("userInfo")
-		console.log(userInfo)
 		const payload = {
 			user: {
 				id: userInfo.savedUser._id,
@@ -353,12 +351,12 @@ const fetchPendingFollowRequests: ValidatedEventAPIGatewayProxyEvent<
 
 
 /*
-	tasks: accepts a follow request and adds users as following/followers
-	returns: 
-	params: event and context
+    tasks: accepts a follow request and adds users as following/followers
+    returns: 
+    params: event and context
 */
 const acceptFollowRequest: ValidatedEventAPIGatewayProxyEvent<
-	typeof acceptFollowRequestSchema
+    typeof acceptFollowRequestSchema
 > = async (event, context) => {
     try {
         const authenticatedEvent = await auth(event);
@@ -366,9 +364,10 @@ const acceptFollowRequest: ValidatedEventAPIGatewayProxyEvent<
             return formatErrorResponse(401, "Token is not valid");
         }
 
+        const userId = authenticatedEvent.body.user;
         const requestId = authenticatedEvent.body.requestId;
         context.callbackWaitsForEmptyEventLoop = false;
-        const result = await followRequestsDao.acceptFollowRequest(requestId);
+        const result = await followRequestsDao.acceptFollowRequest(requestId, userId);
         return formatJSONResponse({ message: result });
     } catch (e) {
         console.log(e);
@@ -386,16 +385,16 @@ const acceptFollowRequest: ValidatedEventAPIGatewayProxyEvent<
 const rejectFollowRequest: ValidatedEventAPIGatewayProxyEvent<
     typeof acceptFollowRequestSchema
 > = async (event, context) => {
-    try {
+	try {
         const authenticatedEvent = await auth(event);
-		console.log(authenticatedEvent)
         if (!authenticatedEvent || !authenticatedEvent.body) {
             return formatErrorResponse(401, "Token is not valid");
         }
 
+        const userId = authenticatedEvent.body.user;
         const requestId = authenticatedEvent.body.requestId;
         context.callbackWaitsForEmptyEventLoop = false;
-        const result = await followRequestsDao.rejectFollowRequest(requestId);
+        const result = await followRequestsDao.rejectFollowRequest(requestId, userId);
         return formatJSONResponse({ message: result });
     } catch (e) {
         console.log(e);
@@ -415,14 +414,14 @@ const cancelFollowRequest: ValidatedEventAPIGatewayProxyEvent<
 > = async (event, context) => {
     try {
         const authenticatedEvent = await auth(event);
-		console.log(authenticatedEvent)
         if (!authenticatedEvent || !authenticatedEvent.body) {
             return formatErrorResponse(401, "Token is not valid");
         }
 
+        const userId = authenticatedEvent.body.user;
         const requestId = authenticatedEvent.body.requestId;
         context.callbackWaitsForEmptyEventLoop = false;
-        const result = await followRequestsDao.cancelFollowRequest(requestId);
+        const result = await followRequestsDao.cancelFollowRequest(requestId, userId);
         return formatJSONResponse({ message: result });
     } catch (e) {
         console.log(e);
@@ -492,8 +491,8 @@ const fetchPosts: ValidatedEventAPIGatewayProxyEvent<
         if (!authenticatedEvent || !authenticatedEvent.body) {
             return formatErrorResponse(401, "Token is not valid");
         }
-
-        const userId = authenticatedEvent.body.user;
+	
+        const userId = authenticatedEvent.body.userID;
         const lastPostTimestamp = authenticatedEvent.body.lastPostTimestamp;
         const limit = authenticatedEvent.body.limit || 20;
 

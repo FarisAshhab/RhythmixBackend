@@ -201,13 +201,13 @@ export const updateUserProfileSchema = {
 export const fetchPostsSchema = {
     type: "object",
     properties: {
-        user: { type: "string" }, // ID of the user whose feed is being fetched
+        userID: { type: "string" }, // ID of the user whose feed is being fetched
         lastPostTimestamp: { type: "string", format: "date-time" }, // Optional, used for pagination
         limit: { type: "number" }, // Optional, number of posts to fetch
         token: { type: "string" }
     },
     required: [
         "token",
-        "user"
+        "userID"
     ],
 } as const;
