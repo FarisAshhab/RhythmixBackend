@@ -48,8 +48,6 @@ const addUser: ValidatedEventAPIGatewayProxyEvent<
 		const userFound = await userDao.createUser(event.body, topArtistsAndGenres)
 		console.log(userFound)
 		let userInfo = JSON.parse(userFound.body)
-		console.log("userInfo")
-		console.log(userInfo)
 		const payload = {
 			user: {
 				id: userInfo.savedUser._id,
@@ -493,8 +491,7 @@ const fetchPosts: ValidatedEventAPIGatewayProxyEvent<
         if (!authenticatedEvent || !authenticatedEvent.body) {
             return formatErrorResponse(401, "Token is not valid");
         }
-		console.log("auth body:::");
-		console.log(authenticatedEvent.body)
+	
         const userId = authenticatedEvent.body.userID;
         const lastPostTimestamp = authenticatedEvent.body.lastPostTimestamp;
         const limit = authenticatedEvent.body.limit || 20;
