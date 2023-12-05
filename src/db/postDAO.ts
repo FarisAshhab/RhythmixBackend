@@ -70,7 +70,7 @@ function postDAO() {
                     return formatErrorResponse(404, "User not found");
                 }
         
-                // Define match conditions with a more flexible type
+                // Define match conditions
                 let matchConditions: { [key: string]: any } = {
                     user_id: { $in: user.following.map(id => new ObjectId(id)) }
                 };
@@ -91,7 +91,29 @@ function postDAO() {
                             as: "songDetails"
                         }
                     },
-                    { $unwind: "$songDetails" }
+                    { $unwind: "$songDetails" },
+                    {
+                        $lookup: {
+                            from: "user",
+                            localField: "user_id",
+                            foreignField: "_id",
+                            as: "userDetails"
+                        }
+                    },
+                    { $unwind: "$userDetails" },
+                    {
+                        $project: {
+                            _id: 1,
+                            caption: 1,
+                            typeOfPost: 1,
+                            created_at: 1,
+                            likes: 1,
+                            songDetails: 1,
+                            user_id: 1,
+                            "user_name": "$userDetails.user_name",
+                            "display_name": "$userDetails.display_name"
+                        }
+                    }
                 ]);
         
                 return formatJSONResponse({ posts });
@@ -102,6 +124,8 @@ function postDAO() {
                 });
             }
         }
+        
+        
         
     
     }
