@@ -16,7 +16,9 @@ import {
   acceptFollowRequest,
   getUserFollowers,
   getUserFollowing,
-  fetchPosts
+  fetchPosts,
+  rejectFollowRequest,
+  cancelFollowRequest
  } from '@functions/users';
 
  import { 
@@ -65,7 +67,9 @@ const serverlessConfiguration: AWS = {
     acceptFollowRequest,
     getUserFollowers,
     getUserFollowing,
-    fetchPosts
+    fetchPosts,
+    rejectFollowRequest,
+    cancelFollowRequest
   },
   package: { individually: true },
   custom: {

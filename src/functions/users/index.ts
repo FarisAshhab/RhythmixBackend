@@ -191,7 +191,7 @@ export const fetchPendingFollowRequests = {
 
 /*
 	post method to accept a follow request to a private user by requestId
-	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+	link : 
 */
 export const acceptFollowRequest = {
 	handler: `${handlerPath(__dirname)}/handler.ACCEPT_FOLLOW_REQUEST`,
@@ -200,6 +200,51 @@ export const acceptFollowRequest = {
 			http: {
 				method: "post",
 				path: "rhythmix/user/acceptFollowRequest",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": acceptFollowRequestSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+
+/*
+	post method to reject a follow request
+	link : 
+*/
+export const rejectFollowRequest = {
+	handler: `${handlerPath(__dirname)}/handler.REJECT_FOLLOW_REQUEST`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/rejectFollowRequest",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": acceptFollowRequestSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to cancel a follow request
+	link : 
+*/
+export const cancelFollowRequest = {
+	handler: `${handlerPath(__dirname)}/handler.CANCEL_FOLLOW_REQUEST`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/cancelFollowRequest",
 				cors: true,
 				request: {
 					schemas: {

@@ -123,7 +123,46 @@ function folowRequestsDAO() {
                 console.error(e);
                 throw new Error('Error accepting follow request');
             }
+        },
+
+        async rejectFollowRequest(requestId: string) {
+            try {
+                await connectMongo();
+                const request = await followRequestModel.findById(requestId as ObjectId);
+                if (!request || request.status !== 'pending') {
+                    throw new Error('Request not found or already handled');
+                }
+        
+                // Update request status to 'rejected'
+                request.status = 'rejected';
+                await request.save();
+        
+                return 'Follow request rejected';
+            } catch (e) {
+                console.error(e);
+                throw new Error('Error rejecting follow request');
+            }
+        },
+
+        async cancelFollowRequest(requestId: string) {
+            try {
+                await connectMongo();
+                const request = await followRequestModel.findById(requestId as ObjectId);
+                if (!request || request.status !== 'pending') {
+                    throw new Error('Request not found or already handled');
+                }
+        
+                // Update request status to 'cancelled'
+                request.status = 'cancelled';
+                await request.save();
+        
+                return 'Follow request cancelled';
+            } catch (e) {
+                console.error(e);
+                throw new Error('Error cancelling follow request');
+            }
         }
+        
         
         
         
