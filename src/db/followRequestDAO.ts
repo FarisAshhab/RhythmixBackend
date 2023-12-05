@@ -93,12 +93,17 @@ function folowRequestsDAO() {
             }
         },
 
-        async acceptFollowRequest(requestId: string) {
+        async acceptFollowRequest(requestId: string, userId: string) {
             try {
                 await connectMongo();
                 const request = await followRequestModel.findById(requestId as ObjectId);
                 if (!request || request.status !== 'pending') {
                     throw new Error('Request not found or already handled');
+                }
+        
+                // Validate that the authenticated user is the intended recipient of the request
+                if (request.toUser.toString() !== userId) {
+                    throw new Error('Unauthorized to accept this follow request');
                 }
         
                 // Add to followers and following
@@ -125,7 +130,7 @@ function folowRequestsDAO() {
             }
         },
 
-        async rejectFollowRequest(requestId: string) {
+        async rejectFollowRequest(requestId: string, userId: string) {
             try {
                 await connectMongo();
                 const request = await followRequestModel.findById(requestId as ObjectId);
@@ -133,7 +138,11 @@ function folowRequestsDAO() {
                     throw new Error('Request not found or already handled');
                 }
         
-                // Update request status to 'rejected'
+                // Validate that the authenticated user is the intended recipient of the request
+                if (request.toUser.toString() !== userId) {
+                    throw new Error('Unauthorized to reject this follow request');
+                }
+        
                 request.status = 'rejected';
                 await request.save();
         
@@ -143,8 +152,8 @@ function folowRequestsDAO() {
                 throw new Error('Error rejecting follow request');
             }
         },
-
-        async cancelFollowRequest(requestId: string) {
+        
+        async cancelFollowRequest(requestId: string, userId: string) {
             try {
                 await connectMongo();
                 const request = await followRequestModel.findById(requestId as ObjectId);
@@ -152,7 +161,11 @@ function folowRequestsDAO() {
                     throw new Error('Request not found or already handled');
                 }
         
-                // Update request status to 'cancelled'
+                // Validate that the authenticated user is the sender of the request
+                if (request.fromUser.toString() !== userId) {
+                    throw new Error('Unauthorized to cancel this follow request');
+                }
+        
                 request.status = 'cancelled';
                 await request.save();
         
@@ -162,6 +175,7 @@ function folowRequestsDAO() {
                 throw new Error('Error cancelling follow request');
             }
         }
+        
         
         
         
