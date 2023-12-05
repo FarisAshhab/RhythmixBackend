@@ -378,6 +378,59 @@ const acceptFollowRequest: ValidatedEventAPIGatewayProxyEvent<
     }
 };
 
+/*
+    tasks: rejects a follow request and updates its status to "denied"
+    returns: 
+    params: event and context
+*/
+const rejectFollowRequest: ValidatedEventAPIGatewayProxyEvent<
+    typeof acceptFollowRequestSchema
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+		console.log(authenticatedEvent)
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+
+        const requestId = authenticatedEvent.body.requestId;
+        context.callbackWaitsForEmptyEventLoop = false;
+        const result = await followRequestsDao.rejectFollowRequest(requestId);
+        return formatJSONResponse({ message: result });
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while rejecting the follow request' }]
+        });
+    }
+};
+
+/*
+    tasks: cancels a follow request and updates its status to "cancelled"
+    returns: 
+    params: event and context
+*/
+const cancelFollowRequest: ValidatedEventAPIGatewayProxyEvent<
+    typeof acceptFollowRequestSchema
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+		console.log(authenticatedEvent)
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+
+        const requestId = authenticatedEvent.body.requestId;
+        context.callbackWaitsForEmptyEventLoop = false;
+        const result = await followRequestsDao.cancelFollowRequest(requestId);
+        return formatJSONResponse({ message: result });
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while cancelling the follow request' }]
+        });
+    }
+};
 
 
 /*
@@ -466,6 +519,8 @@ export const FOLLOW_USER = middyfy(followUser);
 export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
 export const FETCH_POSTS = middyfy(fetchPosts);
 export const ACCEPT_FOLLOW_REQUEST = middyfy(acceptFollowRequest);
+export const REJECT_FOLLOW_REQUEST = middyfy(rejectFollowRequest);
+export const CANCEL_FOLLOW_REQUEST = middyfy(cancelFollowRequest);
 export const GET_USER_FOLLOWERS = middyfy(getUserFollowers);
 export const GET_USER_FOLLOWING = middyfy(getUserFollowing);
 export const GET_EXACT_USER_SEARCH = middyfy(getExactUserById);
