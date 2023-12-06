@@ -168,6 +168,28 @@ export const followUser = {
 };
 
 /*
+	post method to unfollow a user
+	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
+*/
+export const unfollowUser = {
+	handler: `${handlerPath(__dirname)}/handler.UNFOLLOW_USER`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/unfollowUser",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": followUserSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
 	post method fetch all pending requests for a user
 	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
 */

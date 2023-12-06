@@ -174,7 +174,7 @@ typeof getUserFollowingSchema
 
 
 /*
-	tasks: fetches users valid under certain username passed in
+	tasks: 
 	returns: user objects or error
 	params: event and context
 */
@@ -319,6 +319,33 @@ const followUser: ValidatedEventAPIGatewayProxyEvent<
 		});
 	}
 };
+
+/*
+    tasks: unfollow a user
+    returns: 
+    params: event and context
+*/
+const unfollowUser: ValidatedEventAPIGatewayProxyEvent<
+	typeof followUserSchema
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+        context.callbackWaitsForEmptyEventLoop = false;
+
+        const unfollow = await followRequestsDao.handleUnfollowRequest(authenticatedEvent.body.fromUser, authenticatedEvent.body.toUser);
+        let response = JSON.parse(unfollow.body);
+        return formatJSONResponse({ user: response.msg });
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e }]
+        });
+    }
+};
+
 
 /*
 	tasks: fetches all pending follow requests for a user with a private account
@@ -545,6 +572,7 @@ export const CHECK_EMAIL_EXISTS = middyfy(checkIfEmailExists);
 export const CHECK_USERNAME_EXISTS = middyfy(checkIfUserNameExists);
 export const GET_USERS_SEARCH = middyfy(getUsersByUserName);
 export const FOLLOW_USER = middyfy(followUser);
+export const UNFOLLOW_USER = middyfy(unfollowUser);
 export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
 export const FETCH_POSTS = middyfy(fetchPosts);
 export const FETCH_USER_PROFILE_POSTS = middyfy(fetchUserProfilePosts);

@@ -20,7 +20,7 @@ function folowRequestsDAO() {
 
         async handleFollowRequest(fromUserId: string, toUserId: string) {
             try {
-                await connectMongo(); // Assuming you have a similar setup for database connection
+                await connectMongo(); 
         
                 const toUser = await userModel.findById(toUserId as ObjectId);
                 if (!toUser) {
@@ -54,6 +54,39 @@ function folowRequestsDAO() {
                 console.error(e);
                 return formatJSONResponse({
                     messages: [{ error: e.message || 'An error occurred during the follow request process' }]
+                });
+            }
+        },
+
+        async handleUnfollowRequest(fromUserId: string, toUserId: string) {
+            try {
+                await connectMongo(); 
+        
+                const fromUser = await userModel.findById(fromUserId as ObjectId);
+                const toUser = await userModel.findById(toUserId as ObjectId);
+        
+                if (!fromUser || !toUser) {
+                    return formatErrorResponse(404, "User not found");
+                }
+        
+                // Remove fromUser from toUser's followers
+                toUser.followers = toUser.followers.filter(followerId => followerId.toString() !== fromUserId);
+                
+                // Remove toUser from fromUser's following
+                fromUser.following = fromUser.following.filter(followingId => followingId.toString() !== toUserId);
+        
+                await toUser.save();
+                await fromUser.save();
+        
+                // Optional: Handle notification for unfollow
+        
+                return formatJSONResponse({
+                    msg: "User successfully unfollowed",
+                });
+            } catch (e) {
+                console.error(e);
+                return formatJSONResponse({
+                    messages: [{ error: e.message || 'An error occurred during the unfollow process' }]
                 });
             }
         },
