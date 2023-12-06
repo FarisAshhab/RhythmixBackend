@@ -61,6 +61,7 @@ function postDAO() {
             }
         },
 
+        // this will be used for user feed
         async fetchPosts(userId: string, lastPostTimestamp: string, limit: number = 20) {
             try {
                 await connectMongo();
@@ -123,9 +124,64 @@ function postDAO() {
                     messages: [{ error: e.message || "An error occurred while fetching posts" }]
                 });
             }
+        },
+
+        // this will be used for user profile
+        async fetchUserPosts(userId: string, lastPostTimestamp: string, limit: number = 20) {
+            try {
+                await connectMongo();
+        
+                // Fetch the user's details for username and display name
+                const user = await userModel.findById(userId);
+                if (!user) {
+                    return formatErrorResponse(404, "User not found");
+                }
+        
+                // Define match conditions
+                let matchConditions: { [key: string]: any } = {
+                    user_id: new ObjectId(userId)
+                };
+                if (lastPostTimestamp) {
+                    matchConditions['created_at'] = { $lt: new Date(lastPostTimestamp) };
+                }
+        
+                // Perform the aggregation
+                const posts = await postModel.aggregate([
+                    { $match: matchConditions },
+                    { $sort: { created_at: -1 } },
+                    { $limit: limit },
+                    {
+                        $lookup: {
+                            from: "songs", 
+                            localField: "song",
+                            foreignField: "_id",
+                            as: "songDetails"
+                        }
+                    },
+                    { $unwind: { path: "$songDetails", preserveNullAndEmptyArrays: true } },
+                    {
+                        $project: {
+                            _id: 1,
+                            caption: 1,
+                            typeOfPost: 1,
+                            created_at: 1,
+                            likes: 1,
+                            songDetails: 1,
+                            user_name: user.user_name,
+                            display_name: user.display_name,
+                            userId: user._id
+                        }
+                    }
+                ]);
+        
+                return formatJSONResponse({ posts });
+            } catch (e) {
+                console.error(e);
+                return formatJSONResponse({
+                    messages: [{ error: e.message || "An error occurred while fetching user's posts" }]
+                });
+            }
         }
-        
-        
         
     
     }

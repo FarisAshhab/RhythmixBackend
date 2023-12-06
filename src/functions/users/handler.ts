@@ -508,6 +508,36 @@ const fetchPosts: ValidatedEventAPIGatewayProxyEvent<
 };
 
 
+/*
+    tasks: fetches posts for a user's profile
+    returns: 
+    params: event and context
+*/
+const fetchUserProfilePosts: ValidatedEventAPIGatewayProxyEvent<
+    typeof fetchPostsSchema
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+	
+        const userId = authenticatedEvent.body.userID;
+        const lastPostTimestamp = authenticatedEvent.body.lastPostTimestamp;
+        const limit = authenticatedEvent.body.limit || 20;
+
+        context.callbackWaitsForEmptyEventLoop = false;
+        const posts = await postDao.fetchUserPosts(userId, lastPostTimestamp, limit);
+        return formatJSONResponse({ posts });
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while fetching posts' }]
+        });
+    }
+};
+
+
 
 export const ADD_USER = middyfy(addUser);
 export const GET_USER = middyfy(getUserByToken);
@@ -517,6 +547,7 @@ export const GET_USERS_SEARCH = middyfy(getUsersByUserName);
 export const FOLLOW_USER = middyfy(followUser);
 export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
 export const FETCH_POSTS = middyfy(fetchPosts);
+export const FETCH_USER_PROFILE_POSTS = middyfy(fetchUserProfilePosts);
 export const ACCEPT_FOLLOW_REQUEST = middyfy(acceptFollowRequest);
 export const REJECT_FOLLOW_REQUEST = middyfy(rejectFollowRequest);
 export const CANCEL_FOLLOW_REQUEST = middyfy(cancelFollowRequest);
