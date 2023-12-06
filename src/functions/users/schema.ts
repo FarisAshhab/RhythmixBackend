@@ -119,7 +119,7 @@ export const getExactUserByIdSchema = {
 
 
 /*
-	This schema is to be followed when following a user
+	This schema is to be followed when following/unfollowing a user
 */
 export const followUserSchema = {
 	type: "object",
