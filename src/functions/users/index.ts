@@ -397,4 +397,26 @@ export const fetchPosts = {
 };
 
 
+/*
+    post method to fetch posts for a user's profile
+    link : [your API link]
+*/
+export const fetchUserProfilePosts = {
+    handler: `${handlerPath(__dirname)}/handler.FETCH_USER_PROFILE_POSTS`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/fetchUserProfilePosts",
+                cors: true,
+                request: {
+                    schemas: {
+                        "application/json": fetchPostsSchema,
+                    },
+                },
+            },
+        },
+    ],
+};
+
 
