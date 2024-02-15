@@ -23,7 +23,8 @@ import {
 	getExactUserByIdSchema,
 	getUserFollowersSchema,
 	getUserFollowingSchema,
-	fetchPostsSchema
+	fetchPostsSchema,
+	likeUnlikePostSchema
 } from './schema';
 import postDAO from "src/db/postDAO";
 
@@ -534,6 +535,73 @@ const fetchPosts: ValidatedEventAPIGatewayProxyEvent<
     }
 };
 
+/*
+    tasks: likes a post
+    returns: 
+    params: event and context
+*/
+const likePost: ValidatedEventAPIGatewayProxyEvent<
+    typeof likeUnlikePostSchema 
+> = async (event, context) => {
+    try {
+		const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+	
+        const userId = authenticatedEvent.body.userID;
+        const postId = authenticatedEvent.body.postId;
+		console.log("userId")
+		console.log(userId)
+		console.log("postId")
+		console.log(postId)
+        const result = await postDao.likePost(userId, postId);
+        if (result.error) {
+            return formatErrorResponse(404, result.error);
+        }
+        return formatJSONResponse(result);
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while liking the post' }]
+        });
+    }
+};
+
+
+/*
+    tasks: unlikes a post
+    returns: 
+    params: event and context
+*/
+const unLikePost: ValidatedEventAPIGatewayProxyEvent<
+    typeof likeUnlikePostSchema 
+> = async (event, context) => {
+    try {
+		const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+	
+        const userId = authenticatedEvent.body.userID;
+        const postId = authenticatedEvent.body.postId;
+		console.log("userId")
+		console.log(userId)
+		console.log("postId")
+		console.log(postId)
+        const result = await postDao.unlikePost(userId, postId);
+        if (result.error) {
+            return formatErrorResponse(404, result.error);
+        }
+        return formatJSONResponse(result);
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while liking the post' }]
+        });
+    }
+};
+
 
 /*
     tasks: fetches posts for a user's profile
@@ -575,6 +643,8 @@ export const FOLLOW_USER = middyfy(followUser);
 export const UNFOLLOW_USER = middyfy(unfollowUser);
 export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
 export const FETCH_POSTS = middyfy(fetchPosts);
+export const LIKE_POST = middyfy(likePost);
+export const UNLIKE_POST = middyfy(unLikePost);
 export const FETCH_USER_PROFILE_POSTS = middyfy(fetchUserProfilePosts);
 export const ACCEPT_FOLLOW_REQUEST = middyfy(acceptFollowRequest);
 export const REJECT_FOLLOW_REQUEST = middyfy(rejectFollowRequest);

@@ -11,7 +11,8 @@ import {
 	getExactUserByIdSchema,
 	getUserFollowersSchema,
 	getUserFollowingSchema,
-	fetchPostsSchema
+	fetchPostsSchema,
+	likeUnlikePostSchema 
 } from "./schema";
 
 export const addUser = {
@@ -436,6 +437,52 @@ export const fetchUserProfilePosts = {
                         "application/json": fetchPostsSchema,
                     },
                 },
+            },
+        },
+    ],
+};
+
+
+/*
+    post method to like a post
+    link : [ API link]
+*/
+export const likePost = {
+    handler: `${handlerPath(__dirname)}/handler.LIKE_POST`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/post/like",
+                cors: true,
+                request: {
+                    schema: {
+                        'application/json': likeUnlikePostSchema
+                    }
+                }
+            },
+        },
+    ],
+};
+
+
+/*
+    post method to unlike a post
+    link : [ API link]
+*/
+export const unlikePost = {
+    handler: `${handlerPath(__dirname)}/handler.UNLIKE_POST`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/post/unlike",
+                cors: true,
+                request: {
+                    schema: {
+                        'application/json': likeUnlikePostSchema
+                    }
+                }
             },
         },
     ],

@@ -211,3 +211,17 @@ export const fetchPostsSchema = {
         "userID"
     ],
 } as const;
+
+
+/*
+    This schema is to be followed when liking or unliking a post
+*/
+export const likeUnlikePostSchema = {
+    type: "object",
+    properties: {
+        userId: { type: "string" }, // ID of the user liking/unliking the post
+        postId: { type: "string" }, // ID of the post being liked/unliked
+		token: { type: "string" }
+    },
+    required: ["userId", "postId", "token"],
+} as const;
