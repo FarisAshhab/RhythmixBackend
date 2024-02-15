@@ -188,15 +188,26 @@ function postDAO() {
         // Function to like a post
         async likePost(userId: string, postId: string) {
             try {
+                console.log("userId")
+                console.log(userId)
                 await connectMongo();
-                const post = await postModel.findByIdAndUpdate(
-                    postId,
-                    { $addToSet: { likes: userId } }, // Use $addToSet to prevent duplicate likes
-                    { new: true }
-                );
+                const post = await postModel.findById(postId);
+        
                 if (!post) {
                     return { error: "Post not found" };
                 }
+        
+                // Convert userId from string to ObjectId
+                const userIdObjectId = new ObjectId(userId);
+        
+                // Check if the user has already liked the post to avoid duplicates
+                // Note: You might need to convert post.likes elements to string if they are ObjectId
+                // to ensure accurate comparison
+                if (!post.likes.map(id => id.toString()).includes(userIdObjectId.toString())) {
+                    post.likes.push(userIdObjectId);
+                    await post.save();
+                }
+        
                 return { message: "Post liked successfully", post };
             } catch (e) {
                 console.error(e);
@@ -204,18 +215,29 @@ function postDAO() {
             }
         },
 
+        
         // Function to unlike a post
         async unlikePost(userId: string, postId: string) {
             try {
                 await connectMongo();
-                const post = await postModel.findByIdAndUpdate(
-                    postId,
-                    { $pull: { likes: userId } }, // Use $pull to remove the user's like
-                    { new: true }
-                );
+                const post = await postModel.findById(postId);
+        
                 if (!post) {
                     return { error: "Post not found" };
                 }
+        
+                // Convert userId from string to ObjectId for comparison and removal
+                const userIdObjectId = new ObjectId(userId);
+        
+                // Check if the user has already liked the post to ensure operation is necessary
+                // Note: You might need to convert post.likes elements to string if they are ObjectId
+                // to ensure accurate comparison
+                if (post.likes.map(id => id.toString()).includes(userIdObjectId.toString())) {
+                    // Remove the user's like
+                    post.likes = post.likes.filter(id => id.toString() !== userIdObjectId.toString());
+                    await post.save();
+                }
+        
                 return { message: "Post unliked successfully", post };
             } catch (e) {
                 console.error(e);

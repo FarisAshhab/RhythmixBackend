@@ -453,10 +453,10 @@ export const likePost = {
         {
             http: {
                 method: "post",
-                path: "rhythmix/post/like",
+                path: "rhythmix/user/post/like",
                 cors: true,
                 request: {
-                    schema: {
+                    schemas: {
                         'application/json': likeUnlikePostSchema
                     }
                 }
@@ -470,16 +470,16 @@ export const likePost = {
     post method to unlike a post
     link : [ API link]
 */
-export const unlikePost = {
+export const unLikePost = {
     handler: `${handlerPath(__dirname)}/handler.UNLIKE_POST`,
     events: [
         {
             http: {
                 method: "post",
-                path: "rhythmix/post/unlike",
+                path: "rhythmix/user/post/unlike",
                 cors: true,
                 request: {
-                    schema: {
+                    schemas: {
                         'application/json': likeUnlikePostSchema
                     }
                 }
