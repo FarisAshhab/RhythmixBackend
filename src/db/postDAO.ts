@@ -181,6 +181,46 @@ function postDAO() {
                     messages: [{ error: e.message || "An error occurred while fetching user's posts" }]
                 });
             }
+        },
+
+        // db/postDAO.ts
+
+        // Function to like a post
+        async likePost(userId: string, postId: string) {
+            try {
+                await connectMongo();
+                const post = await postModel.findByIdAndUpdate(
+                    postId,
+                    { $addToSet: { likes: userId } }, // Use $addToSet to prevent duplicate likes
+                    { new: true }
+                );
+                if (!post) {
+                    return { error: "Post not found" };
+                }
+                return { message: "Post liked successfully", post };
+            } catch (e) {
+                console.error(e);
+                return { error: e.message || "An error occurred while liking the post" };
+            }
+        },
+
+        // Function to unlike a post
+        async unlikePost(userId: string, postId: string) {
+            try {
+                await connectMongo();
+                const post = await postModel.findByIdAndUpdate(
+                    postId,
+                    { $pull: { likes: userId } }, // Use $pull to remove the user's like
+                    { new: true }
+                );
+                if (!post) {
+                    return { error: "Post not found" };
+                }
+                return { message: "Post unliked successfully", post };
+            } catch (e) {
+                console.error(e);
+                return { error: e.message || "An error occurred while unliking the post" };
+            }
         }
         
     

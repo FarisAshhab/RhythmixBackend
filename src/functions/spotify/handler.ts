@@ -45,7 +45,7 @@ const refreshUserSpotifyToken: ValidatedEventAPIGatewayProxyEvent<
 		
 		const userUpdated = await userDao.updateUserSpotifyCreds(event.body.user, encryptedAccess_token, encryptedRefresh_token);
 		let userInfo = JSON.parse(userUpdated.body)
-		return formatJSONResponse({ user: userInfo.msg });
+		return formatJSONResponse({ user: userInfo.msg, accessToken: encryptedAccess_token });
 	} catch (e) {
 		console.log(e);
 		return formatJSONResponse({
