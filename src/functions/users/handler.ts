@@ -549,7 +549,7 @@ const likePost: ValidatedEventAPIGatewayProxyEvent<
             return formatErrorResponse(401, "Token is not valid");
         }
 	
-        const userId = authenticatedEvent.body.userID;
+        const userId = authenticatedEvent.body.userId;
         const postId = authenticatedEvent.body.postId;
 		console.log("userId")
 		console.log(userId)
@@ -583,7 +583,7 @@ const unLikePost: ValidatedEventAPIGatewayProxyEvent<
             return formatErrorResponse(401, "Token is not valid");
         }
 	
-        const userId = authenticatedEvent.body.userID;
+        const userId = authenticatedEvent.body.userId;
         const postId = authenticatedEvent.body.postId;
 		console.log("userId")
 		console.log(userId)
