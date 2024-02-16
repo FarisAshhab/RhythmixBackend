@@ -235,7 +235,8 @@ export const commentPostSchema = {
         userId: { type: "string" },
         postId: { type: "string" },
         text: { type: "string" },
+		token: { type: "string" }
     },
-    required: ["userId", "postId", "text"],
+    required: ["userId", "postId", "text", "token"],
 } as const;
 
