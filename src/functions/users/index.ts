@@ -13,7 +13,8 @@ import {
 	getUserFollowingSchema,
 	fetchPostsSchema,
 	likeUnlikePostSchema,
-	commentPostSchema 
+	commentPostSchema,
+	fetchNotificationsSchema
 } from "./schema";
 
 export const addUser = {
@@ -413,6 +414,29 @@ export const fetchPosts = {
                 request: {
                     schemas: {
                         "application/json": fetchPostsSchema,
+                    },
+                },
+            },
+        },
+    ],
+};
+
+
+/*
+    post method to fetch notifications for a user
+    link : [your API link]
+*/
+export const fetchUserNotifications = {
+    handler: `${handlerPath(__dirname)}/handler.FETCH_NOTIFICATIONS`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/fetchNotifications",
+                cors: true,
+                request: {
+                    schemas: {
+                        "application/json": fetchNotificationsSchema,
                     },
                 },
             },

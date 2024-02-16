@@ -13,7 +13,7 @@ import { default as followRequestModel } from "./models/FollowRequests";
 import notificationDAO from "./notificationDAO";
 
 dotenv.config()
-
+const notificationDao = notificationDAO()
 
 function folowRequestsDAO() {
 
@@ -33,6 +33,8 @@ function folowRequestsDAO() {
                     await followRequestModel.create({ fromUser: fromUserId, toUser: toUserId });
 
                     // Optional: Create notification for follow request
+                    const addNotification = await notificationDao.createNotification('followRequest', fromUserId, toUserId);
+                    console.log(addNotification)
                     return formatJSONResponse({
                         msg: "Follow request sent",
                     });
@@ -48,6 +50,8 @@ function folowRequestsDAO() {
                     await toUser.save();
                     await fromUser.save();
                     // Optional: Create notification for new follower
+                    const addNotification = await notificationDao.createNotification('newFollower', fromUserId, toUserId);
+                    console.log(addNotification)
                     return formatJSONResponse({
                         msg: "User successfully followed",
                     });
@@ -59,6 +63,40 @@ function folowRequestsDAO() {
                 });
             }
         },
+
+        async handleFollowRequest1(fromUserId: string, toUserId: string) {
+            try {
+                await connectMongo(); 
+                const toUser = await userModel.findById(toUserId);
+                if (!toUser) {
+                    throw new Error("User to follow not found");
+                }
+        
+                let isPrivate = toUser.profile_type === 'private';
+                if (isPrivate) {
+                    // Create follow request for private accounts
+                    await followRequestModel.create({ fromUser: fromUserId, toUser: toUserId });
+                } else {
+                    // For public accounts, add followers and following
+                    toUser.followers.push(fromUserId as ObjectId);
+                    const fromUser = await userModel.findById(fromUserId);
+                    if (!fromUser) {
+                        throw new Error("From user not found");
+                    }
+                    fromUser.following.push(toUserId as ObjectId);
+                    await toUser.save();
+                    await fromUser.save();
+                }
+                // Return success status and whether the profile is private
+                return { success: true, isPrivate: toUser.profile_type === 'private' };
+            } catch (e) {
+                console.error(e);
+                // Return or throw an error indicating failure
+                return { success: false, error: e.message };
+            }
+        },
+        
+        
 
         async handleUnfollowRequest(fromUserId: string, toUserId: string) {
             try {
@@ -79,8 +117,6 @@ function folowRequestsDAO() {
         
                 await toUser.save();
                 await fromUser.save();
-        
-                // Optional: Handle notification for unfollow
         
                 return formatJSONResponse({
                     msg: "User successfully unfollowed",

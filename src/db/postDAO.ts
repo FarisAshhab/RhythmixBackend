@@ -11,9 +11,10 @@ import {
 import { default as songModel } from "./models/Song";
 import { default as postModel } from "./models/Post";
 import { default as userModel } from "./models/User";
+import notificationDAO from "./notificationDAO";
 
 dotenv.config()
-
+const notificationDao = notificationDAO()
 
 function postDAO() {
 

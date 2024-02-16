@@ -25,14 +25,17 @@ import {
 	getUserFollowingSchema,
 	fetchPostsSchema,
 	likeUnlikePostSchema,
-	commentPostSchema
+	commentPostSchema,
+	fetchNotificationsSchema
 } from './schema';
 import postDAO from "src/db/postDAO";
 import commentDAO from "src/db/commentDAO";
+import notificationDAO from "src/db/notificationDAO";
 
 const userDao = userDAO()
 const postDao = postDAO()
 const commentDao = commentDAO()
+const notificationDao = notificationDAO()
 const followRequestsDao = followRequestsDAO()
 const awsService = AwsService()
 const spotifyService = SpotifyService()
@@ -301,28 +304,59 @@ const updateUserProfile: ValidatedEventAPIGatewayProxyEvent<
 	returns: 
 	params: event and context
 */
-const followUser: ValidatedEventAPIGatewayProxyEvent<
-	typeof followUserSchema
-> = async (event, context) => {
-	try {
-		const authenticatedEvent = await auth(event);
-		if (!authenticatedEvent || !authenticatedEvent.body) {
-			return formatErrorResponse(401, "Token is not valid");
-		}
-		if ( authenticatedEvent.body.user !== authenticatedEvent.body.fromUser) {
-			return formatErrorResponse(401, "Incorrect fromUser passed");
-		}
-		context.callbackWaitsForEmptyEventLoop = false;
-		const follow = await followRequestsDao.handleFollowRequest(authenticatedEvent.body.fromUser, authenticatedEvent.body.toUser);
-		let response = JSON.parse(follow.body);
-		return formatJSONResponse({ user: response.msg });
-	} catch (e) {
-		console.log(e);
-		return formatJSONResponse({
-		messages: [{ error: e }]
-		});
-	}
+// const followUser: ValidatedEventAPIGatewayProxyEvent<
+// 	typeof followUserSchema
+// > = async (event, context) => {
+// 	try {
+// 		const authenticatedEvent = await auth(event);
+// 		if (!authenticatedEvent || !authenticatedEvent.body) {
+// 			return formatErrorResponse(401, "Token is not valid");
+// 		}
+// 		if ( authenticatedEvent.body.user !== authenticatedEvent.body.fromUser) {
+// 			return formatErrorResponse(401, "Incorrect fromUser passed");
+// 		}
+// 		context.callbackWaitsForEmptyEventLoop = false;
+// 		const follow = await followRequestsDao.handleFollowRequest(authenticatedEvent.body.fromUser, authenticatedEvent.body.toUser);
+// 		let response = JSON.parse(follow.body);
+// 		return formatJSONResponse({ user: response.msg });
+// 	} catch (e) {
+// 		console.log(e);
+// 		return formatJSONResponse({
+// 		messages: [{ error: e }]
+// 		});
+// 	}
+// };
+
+const followUser: ValidatedEventAPIGatewayProxyEvent<typeof followUserSchema> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+
+        const { fromUser, toUser } = authenticatedEvent.body;
+        const followResult = await followRequestsDao.handleFollowRequest1(fromUser, toUser);
+
+        // Check if operation was successful and for public profiles
+        if (followResult.success && !followResult.isPrivate) {
+            await notificationDao.createNotification('newFollower', fromUser, toUser);
+            return formatJSONResponse({ message: "User successfully followed." });
+        } else if (followResult.success && followResult.isPrivate) {
+			await notificationDao.createNotification('followRequest', fromUser, toUser);
+            return formatJSONResponse({ message: "Follow request sent." });
+        } else {
+            // Handle error or unsuccessful operation
+            return formatErrorResponse(400, followResult.error || "An error occurred during the follow operation.");
+        }
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An unexpected error occurred' }]
+        });
+    }
 };
+
+
 
 /*
     tasks: unfollow a user
@@ -558,6 +592,10 @@ const likePost: ValidatedEventAPIGatewayProxyEvent<
         if (result.error) {
             return formatErrorResponse(404, result.error);
         }
+		console.log("result")
+		console.log(result.post.user_id)
+		const addNotification = await notificationDao.createNotification('like', userId.toString(), (result.post.user_id).toString());
+        console.log(addNotification)
         return formatJSONResponse(result);
     } catch (e) {
         console.log(e);
@@ -637,9 +675,34 @@ const fetchUserProfilePosts: ValidatedEventAPIGatewayProxyEvent<
     returns: 
     params: event and context
 */
-const commentOnPost: ValidatedEventAPIGatewayProxyEvent<
-    typeof commentPostSchema 
-> = async (event, context) => {
+// const commentOnPost: ValidatedEventAPIGatewayProxyEvent<
+//     typeof commentPostSchema 
+// > = async (event, context) => {
+//     try {
+//         const authenticatedEvent = await auth(event);
+//         if (!authenticatedEvent || !authenticatedEvent.body) {
+//             return formatErrorResponse(401, "Token is not valid");
+//         }
+    
+//         const { userId, postId, text } = authenticatedEvent.body;
+// 		console.log("bodyy")
+// 		console.log(userId)
+// 		console.log(postId)
+// 		console.log(text)
+//         const result = await commentDao.commentPost(userId, postId, text);
+//         if (result.error) {
+//             return formatErrorResponse(404, result.error);
+//         }
+//         return formatJSONResponse(result);
+//     } catch (e) {
+//         console.log(e);
+//         return formatJSONResponse({
+//             messages: [{ error: e.message || 'An error occurred while adding the comment' }]
+//         });
+//     }
+// };
+
+const commentOnPost: ValidatedEventAPIGatewayProxyEvent<typeof commentPostSchema> = async (event, context) => {
     try {
         const authenticatedEvent = await auth(event);
         if (!authenticatedEvent || !authenticatedEvent.body) {
@@ -647,19 +710,58 @@ const commentOnPost: ValidatedEventAPIGatewayProxyEvent<
         }
     
         const { userId, postId, text } = authenticatedEvent.body;
-		console.log("bodyy")
-		console.log(userId)
-		console.log(postId)
-		console.log(text)
         const result = await commentDao.commentPost(userId, postId, text);
         if (result.error) {
             return formatErrorResponse(404, result.error);
         }
+
+        // If the comment was added successfully, proceed to create a notification
+        if (result.postOwnerId) {
+            await notificationDao.createNotification('comment', userId, result.postOwnerId);
+        }
+
         return formatJSONResponse(result);
     } catch (e) {
         console.log(e);
         return formatJSONResponse({
             messages: [{ error: e.message || 'An error occurred while adding the comment' }]
+        });
+    }
+};
+
+
+const fetchUserNotifications: ValidatedEventAPIGatewayProxyEvent<typeof fetchNotificationsSchema> = async (event, context) => {
+    try {
+        // Authenticate the request
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+
+        // Extract parameters from the event body
+        const { userID, lastNotificationTimestamp, limit } = authenticatedEvent.body;
+
+		console.log("authhh")
+		console.log(authenticatedEvent.body.user)
+        // // Ensure the authenticated user matches the userID for which notifications are being fetched
+        // if (authenticatedEvent.userID !== userId) {
+        //     return formatErrorResponse(403, "Forbidden: You can only fetch your own notifications");
+        // }
+
+        // Fetch notifications with optional pagination and limit
+		console.log(userID)
+		console.log(limit)
+		console.log(lastNotificationTimestamp)
+        const notificationsResult = await notificationDao.fetchNotifications(userID, limit, lastNotificationTimestamp);
+        
+        // Check for errors or empty results in notificationsResult if necessary
+
+        return formatJSONResponse({ notifications: notificationsResult });
+    } catch (e) {
+        console.error(e);
+        return formatJSONResponse({
+            status: 500,
+            messages: [{ error: e.message || 'An error occurred while fetching notifications' }]
         });
     }
 };
@@ -675,6 +777,7 @@ export const FOLLOW_USER = middyfy(followUser);
 export const UNFOLLOW_USER = middyfy(unfollowUser);
 export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests);
 export const FETCH_POSTS = middyfy(fetchPosts);
+export const FETCH_NOTIFICATIONS = middyfy(fetchUserNotifications);
 export const LIKE_POST = middyfy(likePost);
 export const UNLIKE_POST = middyfy(unLikePost);
 export const COMMENT_POST = middyfy(commentOnPost);
