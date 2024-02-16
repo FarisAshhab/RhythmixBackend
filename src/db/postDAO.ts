@@ -62,7 +62,7 @@ function postDAO() {
         },
 
         // this will be used for user feed
-        async fetchPosts(userId: string, lastPostTimestamp: string, limit: number = 20) {
+        async fetchPosts(userId: string, lastPostTimestamp: string, limit: number = 10) {
             try {
                 await connectMongo();
                 const user = await userModel.findById(userId);
@@ -86,7 +86,7 @@ function postDAO() {
                     { $limit: limit },
                     {
                         $lookup: {
-                            from: "songs", 
+                            from: "songs",
                             localField: "song",
                             foreignField: "_id",
                             as: "songDetails"
@@ -103,6 +103,25 @@ function postDAO() {
                     },
                     { $unwind: "$userDetails" },
                     {
+                        $lookup: {
+                            from: "comments",
+                            localField: "_id",
+                            foreignField: "post_id",
+                            as: "comments"
+                        }
+                    },
+                    { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } }, // Adjusted
+                    {
+                        $lookup: {
+                            from: "user",
+                            localField: "comments.user_id",
+                            foreignField: "_id",
+                            as: "comments.userDetails"
+                        }
+                    },
+                    { $unwind: { path: "$comments.userDetails", preserveNullAndEmptyArrays: true } },
+                    // Project and format the comment user details
+                    {
                         $project: {
                             _id: 1,
                             caption: 1,
@@ -112,8 +131,29 @@ function postDAO() {
                             songDetails: 1,
                             user_id: 1,
                             "user_name": "$userDetails.user_name",
-                            "display_name": "$userDetails.display_name"
+                            "display_name": "$userDetails.display_name",
+                            "comments.text": 1,
+                            "comments.created_at": 1,
+                            "comments.display_name": "$comments.userDetails.display_name",
                         }
+                    },
+                    // Group the comments back into their respective posts
+                    {
+                        $group: {
+                            _id: "$_id",
+                            caption: { $first: "$caption" },
+                            typeOfPost: { $first: "$typeOfPost" },
+                            created_at: { $first: "$created_at" },
+                            likes: { $first: "$likes" },
+                            songDetails: { $first: "$songDetails" },
+                            user_id: { $first: "$user_id" },
+                            user_name: { $first: "$user_name" },
+                            display_name: { $first: "$display_name" },
+                            comments: { $push: "$comments" }
+                        }
+                    },
+                    {
+                        $sort: { created_at: -1 } // Reapply sorting to maintain order
                     }
                 ]);
         
@@ -127,7 +167,7 @@ function postDAO() {
         },
 
         // this will be used for user profile
-        async fetchUserPosts(userId: string, lastPostTimestamp: string, limit: number = 20) {
+        async fetchUserPosts(userId: string, lastPostTimestamp: string, limit: number = 10) {
             try {
                 await connectMongo();
         
@@ -160,6 +200,23 @@ function postDAO() {
                     },
                     { $unwind: { path: "$songDetails", preserveNullAndEmptyArrays: true } },
                     {
+                        $lookup: {
+                            from: "comments",
+                            localField: "_id",
+                            foreignField: "post_id",
+                            as: "comments"
+                        }
+                    },
+                    // Optional: Limit the number of comments here if desired
+                    {
+                        $lookup: {
+                            from: "user",
+                            localField: "comments.user_id",
+                            foreignField: "_id",
+                            as: "commentUserDetails"
+                        }
+                    },
+                    {
                         $project: {
                             _id: 1,
                             caption: 1,
@@ -169,7 +226,24 @@ function postDAO() {
                             songDetails: 1,
                             user_name: user.user_name,
                             display_name: user.display_name,
-                            userId: user._id
+                            userId: user._id,
+                            comments: {
+                                $map: {
+                                    input: "$comments",
+                                    as: "comment",
+                                    in: {
+                                        text: "$$comment.text",
+                                        created_at: "$$comment.created_at",
+                                        user_id: "$$comment.user_id",
+                                        display_name: {
+                                            $arrayElemAt: [
+                                                "$commentUserDetails.display_name",
+                                                { $indexOfArray: ["$commentUserDetails._id", "$$comment.user_id"] }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 ]);
@@ -215,7 +289,7 @@ function postDAO() {
             }
         },
 
-        
+
         // Function to unlike a post
         async unlikePost(userId: string, postId: string) {
             try {

@@ -24,12 +24,15 @@ import {
 	getUserFollowersSchema,
 	getUserFollowingSchema,
 	fetchPostsSchema,
-	likeUnlikePostSchema
+	likeUnlikePostSchema,
+	commentPostSchema
 } from './schema';
 import postDAO from "src/db/postDAO";
+import commentDAO from "src/db/commentDAO";
 
 const userDao = userDAO()
 const postDao = postDAO()
+const commentDao = commentDAO()
 const followRequestsDao = followRequestsDAO()
 const awsService = AwsService()
 const spotifyService = SpotifyService()
@@ -551,10 +554,6 @@ const likePost: ValidatedEventAPIGatewayProxyEvent<
 	
         const userId = authenticatedEvent.body.userId;
         const postId = authenticatedEvent.body.postId;
-		console.log("userId")
-		console.log(userId)
-		console.log("postId")
-		console.log(postId)
         const result = await postDao.likePost(userId, postId);
         if (result.error) {
             return formatErrorResponse(404, result.error);
@@ -633,6 +632,39 @@ const fetchUserProfilePosts: ValidatedEventAPIGatewayProxyEvent<
 };
 
 
+/*
+    tasks: comments on a post
+    returns: 
+    params: event and context
+*/
+const commentOnPost: ValidatedEventAPIGatewayProxyEvent<
+    typeof commentPostSchema 
+> = async (event, context) => {
+    try {
+        const authenticatedEvent = await auth(event);
+        if (!authenticatedEvent || !authenticatedEvent.body) {
+            return formatErrorResponse(401, "Token is not valid");
+        }
+    
+        const { userId, postId, text } = authenticatedEvent.body;
+		console.log("bodyy")
+		console.log(userId)
+		console.log(postId)
+		console.log(text)
+        const result = await commentDao.commentPost(userId, postId, text);
+        if (result.error) {
+            return formatErrorResponse(404, result.error);
+        }
+        return formatJSONResponse(result);
+    } catch (e) {
+        console.log(e);
+        return formatJSONResponse({
+            messages: [{ error: e.message || 'An error occurred while adding the comment' }]
+        });
+    }
+};
+
+
 
 export const ADD_USER = middyfy(addUser);
 export const GET_USER = middyfy(getUserByToken);
@@ -645,6 +677,7 @@ export const FETCH_PENDING_FOLLOW_REQUESTS = middyfy(fetchPendingFollowRequests)
 export const FETCH_POSTS = middyfy(fetchPosts);
 export const LIKE_POST = middyfy(likePost);
 export const UNLIKE_POST = middyfy(unLikePost);
+export const COMMENT_POST = middyfy(commentOnPost);
 export const FETCH_USER_PROFILE_POSTS = middyfy(fetchUserProfilePosts);
 export const ACCEPT_FOLLOW_REQUEST = middyfy(acceptFollowRequest);
 export const REJECT_FOLLOW_REQUEST = middyfy(rejectFollowRequest);

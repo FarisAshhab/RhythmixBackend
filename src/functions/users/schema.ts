@@ -225,3 +225,17 @@ export const likeUnlikePostSchema = {
     },
     required: ["userId", "postId", "token"],
 } as const;
+
+/*
+    This schema is to be followed when commenting on a post
+*/
+export const commentPostSchema = {
+    type: "object",
+    properties: {
+        userId: { type: "string" },
+        postId: { type: "string" },
+        text: { type: "string" },
+    },
+    required: ["userId", "postId", "text"],
+} as const;
+
