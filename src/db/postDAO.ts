@@ -134,7 +134,8 @@ function postDAO() {
                             "display_name": "$userDetails.display_name",
                             "comments.text": 1,
                             "comments.created_at": 1,
-                            "comments.display_name": "$comments.userDetails.display_name",
+                            "commentUserId": "$comments.user_id", // Include the userId of each comment
+                            "commentUserName": "$comments.userDetails.user_name", // Use userName instead of displayName
                         }
                     },
                     // Group the comments back into their respective posts
@@ -149,7 +150,14 @@ function postDAO() {
                             user_id: { $first: "$user_id" },
                             user_name: { $first: "$user_name" },
                             display_name: { $first: "$display_name" },
-                            comments: { $push: "$comments" }
+                            comments: { 
+                                $push: { 
+                                    text: "$comments.text", 
+                                    created_at: "$comments.created_at", 
+                                    userId: "$commentUserId", // Aggregate the userId with the comment
+                                    userName: "$commentUserName" // Aggregate the userName with the comment
+                                }
+                            }
                         }
                     },
                     {
@@ -235,9 +243,9 @@ function postDAO() {
                                         text: "$$comment.text",
                                         created_at: "$$comment.created_at",
                                         user_id: "$$comment.user_id",
-                                        display_name: {
+                                        user_name: {
                                             $arrayElemAt: [
-                                                "$commentUserDetails.display_name",
+                                                "$commentUserDetails.user_name",
                                                 { $indexOfArray: ["$commentUserDetails._id", "$$comment.user_id"] }
                                             ]
                                         }
