@@ -22,7 +22,8 @@ import {
   rejectFollowRequest,
   cancelFollowRequest,
   likePost,
-  unLikePost
+  unLikePost,
+  commentOnPost
  } from '@functions/users';
 
  import { 
@@ -77,7 +78,8 @@ const serverlessConfiguration: AWS = {
     rejectFollowRequest,
     cancelFollowRequest,
     likePost,
-    unLikePost
+    unLikePost,
+    commentOnPost
   },
   package: { individually: true },
   custom: {

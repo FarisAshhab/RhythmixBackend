@@ -12,7 +12,8 @@ import {
 	getUserFollowersSchema,
 	getUserFollowingSchema,
 	fetchPostsSchema,
-	likeUnlikePostSchema 
+	likeUnlikePostSchema,
+	commentPostSchema 
 } from "./schema";
 
 export const addUser = {
@@ -487,5 +488,29 @@ export const unLikePost = {
         },
     ],
 };
+
+
+/*
+    post method to comment on a post
+    link : [ API link]
+*/
+export const commentOnPost = {
+    handler: `${handlerPath(__dirname)}/handler.COMMENT_POST`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/post/comment",
+                cors: true,
+                request: {
+                    schemas: {
+                        'application/json': commentPostSchema,
+                    },
+                },
+            },
+        },
+    ],
+};
+
 
 
