@@ -154,8 +154,8 @@ function postDAO() {
                                 $push: { 
                                     text: "$comments.text", 
                                     created_at: "$comments.created_at", 
-                                    userId: "$commentUserId", // Aggregate the userId with the comment
-                                    userName: "$commentUserName" // Aggregate the userName with the comment
+                                    user_id: "$commentUserId", // Aggregate the userId with the comment
+                                    user_name: "$commentUserName" // Aggregate the userName with the comment
                                 }
                             }
                         }
