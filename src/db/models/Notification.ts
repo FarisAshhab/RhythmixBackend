@@ -16,12 +16,11 @@ const notificationSchema: Schema = new Schema(
         },
         fromUser: { 
             type: Schema.Types.ObjectId, 
-            ref: 'User', 
-            required: true 
+            ref: 'user'
         },
         toUser: { 
             type: Schema.Types.ObjectId, 
-            ref: 'User', 
+            ref: 'user', 
             required: true 
         },
         createdAt: { 
