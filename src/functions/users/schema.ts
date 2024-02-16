@@ -211,3 +211,50 @@ export const fetchPostsSchema = {
         "userID"
     ],
 } as const;
+
+
+/*
+    This schema is to be followed when liking or unliking a post
+*/
+export const likeUnlikePostSchema = {
+    type: "object",
+    properties: {
+        userId: { type: "string" }, // ID of the user liking/unliking the post
+        postId: { type: "string" }, // ID of the post being liked/unliked
+		token: { type: "string" }
+    },
+    required: ["userId", "postId", "token"],
+} as const;
+
+/*
+    This schema is to be followed when commenting on a post
+*/
+export const commentPostSchema = {
+    type: "object",
+    properties: {
+        userId: { type: "string" },
+        postId: { type: "string" },
+        text: { type: "string" },
+		token: { type: "string" }
+    },
+    required: ["userId", "postId", "text", "token"],
+} as const;
+
+
+/*
+    This schema is to be followed when fetching notifications for a user
+*/
+export const fetchNotificationsSchema = {
+    type: "object",
+    properties: {
+        userID: { type: "string" }, // ID of the user whose notifications are being fetched
+        lastNotificationTimestamp: { type: "string", format: "date-time" }, // Optional, used for pagination to fetch older notifications
+        limit: { type: "number" }, // Optional, number of notifications to fetch, defaulting to a predefined value if not specified
+        token: { type: "string" } // Authentication token to verify the user's identity
+    },
+    required: [
+        "token",
+        "userID"
+    ],
+} as const;
+

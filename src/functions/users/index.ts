@@ -11,7 +11,10 @@ import {
 	getExactUserByIdSchema,
 	getUserFollowersSchema,
 	getUserFollowingSchema,
-	fetchPostsSchema
+	fetchPostsSchema,
+	likeUnlikePostSchema,
+	commentPostSchema,
+	fetchNotificationsSchema
 } from "./schema";
 
 export const addUser = {
@@ -420,6 +423,29 @@ export const fetchPosts = {
 
 
 /*
+    post method to fetch notifications for a user
+    link : [your API link]
+*/
+export const fetchUserNotifications = {
+    handler: `${handlerPath(__dirname)}/handler.FETCH_NOTIFICATIONS`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/fetchNotifications",
+                cors: true,
+                request: {
+                    schemas: {
+                        "application/json": fetchNotificationsSchema,
+                    },
+                },
+            },
+        },
+    ],
+};
+
+
+/*
     post method to fetch posts for a user's profile
     link : [your API link]
 */
@@ -440,5 +466,75 @@ export const fetchUserProfilePosts = {
         },
     ],
 };
+
+
+/*
+    post method to like a post
+    link : [ API link]
+*/
+export const likePost = {
+    handler: `${handlerPath(__dirname)}/handler.LIKE_POST`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/post/like",
+                cors: true,
+                request: {
+                    schemas: {
+                        'application/json': likeUnlikePostSchema
+                    }
+                }
+            },
+        },
+    ],
+};
+
+
+/*
+    post method to unlike a post
+    link : [ API link]
+*/
+export const unLikePost = {
+    handler: `${handlerPath(__dirname)}/handler.UNLIKE_POST`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/post/unlike",
+                cors: true,
+                request: {
+                    schemas: {
+                        'application/json': likeUnlikePostSchema
+                    }
+                }
+            },
+        },
+    ],
+};
+
+
+/*
+    post method to comment on a post
+    link : [ API link]
+*/
+export const commentOnPost = {
+    handler: `${handlerPath(__dirname)}/handler.COMMENT_POST`,
+    events: [
+        {
+            http: {
+                method: "post",
+                path: "rhythmix/user/post/comment",
+                cors: true,
+                request: {
+                    schemas: {
+                        'application/json': commentPostSchema,
+                    },
+                },
+            },
+        },
+    ],
+};
+
 
 

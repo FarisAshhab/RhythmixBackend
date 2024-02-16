@@ -11,9 +11,10 @@ import {
 import { default as songModel } from "./models/Song";
 import { default as postModel } from "./models/Post";
 import { default as userModel } from "./models/User";
+import notificationDAO from "./notificationDAO";
 
 dotenv.config()
-
+const notificationDao = notificationDAO()
 
 function postDAO() {
 
@@ -62,7 +63,7 @@ function postDAO() {
         },
 
         // this will be used for user feed
-        async fetchPosts(userId: string, lastPostTimestamp: string, limit: number = 20) {
+        async fetchPosts(userId: string, lastPostTimestamp: string, limit: number = 10) {
             try {
                 await connectMongo();
                 const user = await userModel.findById(userId);
@@ -86,7 +87,7 @@ function postDAO() {
                     { $limit: limit },
                     {
                         $lookup: {
-                            from: "songs", 
+                            from: "songs",
                             localField: "song",
                             foreignField: "_id",
                             as: "songDetails"
@@ -103,6 +104,25 @@ function postDAO() {
                     },
                     { $unwind: "$userDetails" },
                     {
+                        $lookup: {
+                            from: "comments",
+                            localField: "_id",
+                            foreignField: "post_id",
+                            as: "comments"
+                        }
+                    },
+                    { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } }, // Adjusted
+                    {
+                        $lookup: {
+                            from: "user",
+                            localField: "comments.user_id",
+                            foreignField: "_id",
+                            as: "comments.userDetails"
+                        }
+                    },
+                    { $unwind: { path: "$comments.userDetails", preserveNullAndEmptyArrays: true } },
+                    // Project and format the comment user details
+                    {
                         $project: {
                             _id: 1,
                             caption: 1,
@@ -112,8 +132,37 @@ function postDAO() {
                             songDetails: 1,
                             user_id: 1,
                             "user_name": "$userDetails.user_name",
-                            "display_name": "$userDetails.display_name"
+                            "display_name": "$userDetails.display_name",
+                            "comments.text": 1,
+                            "comments.created_at": 1,
+                            "commentUserId": "$comments.user_id", // Include the userId of each comment
+                            "commentUserName": "$comments.userDetails.user_name", // Use userName instead of displayName
                         }
+                    },
+                    // Group the comments back into their respective posts
+                    {
+                        $group: {
+                            _id: "$_id",
+                            caption: { $first: "$caption" },
+                            typeOfPost: { $first: "$typeOfPost" },
+                            created_at: { $first: "$created_at" },
+                            likes: { $first: "$likes" },
+                            songDetails: { $first: "$songDetails" },
+                            user_id: { $first: "$user_id" },
+                            user_name: { $first: "$user_name" },
+                            display_name: { $first: "$display_name" },
+                            comments: { 
+                                $push: { 
+                                    text: "$comments.text", 
+                                    created_at: "$comments.created_at", 
+                                    user_id: "$commentUserId", // Aggregate the userId with the comment
+                                    user_name: "$commentUserName" // Aggregate the userName with the comment
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $sort: { created_at: -1 } // Reapply sorting to maintain order
                     }
                 ]);
         
@@ -127,7 +176,7 @@ function postDAO() {
         },
 
         // this will be used for user profile
-        async fetchUserPosts(userId: string, lastPostTimestamp: string, limit: number = 20) {
+        async fetchUserPosts(userId: string, lastPostTimestamp: string, limit: number = 10) {
             try {
                 await connectMongo();
         
@@ -160,6 +209,23 @@ function postDAO() {
                     },
                     { $unwind: { path: "$songDetails", preserveNullAndEmptyArrays: true } },
                     {
+                        $lookup: {
+                            from: "comments",
+                            localField: "_id",
+                            foreignField: "post_id",
+                            as: "comments"
+                        }
+                    },
+                    // Optional: Limit the number of comments here if desired
+                    {
+                        $lookup: {
+                            from: "user",
+                            localField: "comments.user_id",
+                            foreignField: "_id",
+                            as: "commentUserDetails"
+                        }
+                    },
+                    {
                         $project: {
                             _id: 1,
                             caption: 1,
@@ -169,7 +235,24 @@ function postDAO() {
                             songDetails: 1,
                             user_name: user.user_name,
                             display_name: user.display_name,
-                            userId: user._id
+                            userId: user._id,
+                            comments: {
+                                $map: {
+                                    input: "$comments",
+                                    as: "comment",
+                                    in: {
+                                        text: "$$comment.text",
+                                        created_at: "$$comment.created_at",
+                                        user_id: "$$comment.user_id",
+                                        user_name: {
+                                            $arrayElemAt: [
+                                                "$commentUserDetails.user_name",
+                                                { $indexOfArray: ["$commentUserDetails._id", "$$comment.user_id"] }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 ]);
@@ -180,6 +263,68 @@ function postDAO() {
                 return formatJSONResponse({
                     messages: [{ error: e.message || "An error occurred while fetching user's posts" }]
                 });
+            }
+        },
+
+        // db/postDAO.ts
+
+        // Function to like a post
+        async likePost(userId: string, postId: string) {
+            try {
+                console.log("userId")
+                console.log(userId)
+                await connectMongo();
+                const post = await postModel.findById(postId);
+        
+                if (!post) {
+                    return { error: "Post not found" };
+                }
+        
+                // Convert userId from string to ObjectId
+                const userIdObjectId = new ObjectId(userId);
+        
+                // Check if the user has already liked the post to avoid duplicates
+                // Note: You might need to convert post.likes elements to string if they are ObjectId
+                // to ensure accurate comparison
+                if (!post.likes.map(id => id.toString()).includes(userIdObjectId.toString())) {
+                    post.likes.push(userIdObjectId);
+                    await post.save();
+                }
+        
+                return { message: "Post liked successfully", post };
+            } catch (e) {
+                console.error(e);
+                return { error: e.message || "An error occurred while liking the post" };
+            }
+        },
+
+
+        // Function to unlike a post
+        async unlikePost(userId: string, postId: string) {
+            try {
+                await connectMongo();
+                const post = await postModel.findById(postId);
+        
+                if (!post) {
+                    return { error: "Post not found" };
+                }
+        
+                // Convert userId from string to ObjectId for comparison and removal
+                const userIdObjectId = new ObjectId(userId);
+        
+                // Check if the user has already liked the post to ensure operation is necessary
+                // Note: You might need to convert post.likes elements to string if they are ObjectId
+                // to ensure accurate comparison
+                if (post.likes.map(id => id.toString()).includes(userIdObjectId.toString())) {
+                    // Remove the user's like
+                    post.likes = post.likes.filter(id => id.toString() !== userIdObjectId.toString());
+                    await post.save();
+                }
+        
+                return { message: "Post unliked successfully", post };
+            } catch (e) {
+                console.error(e);
+                return { error: e.message || "An error occurred while unliking the post" };
             }
         }
         

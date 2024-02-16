@@ -20,7 +20,11 @@ import {
   fetchPosts,
   fetchUserProfilePosts,
   rejectFollowRequest,
-  cancelFollowRequest
+  cancelFollowRequest,
+  likePost,
+  unLikePost,
+  commentOnPost,
+  fetchUserNotifications
  } from '@functions/users';
 
  import { 
@@ -73,7 +77,11 @@ const serverlessConfiguration: AWS = {
     fetchPosts,
     fetchUserProfilePosts,
     rejectFollowRequest,
-    cancelFollowRequest
+    cancelFollowRequest,
+    likePost,
+    unLikePost,
+    commentOnPost,
+    fetchUserNotifications
   },
   package: { individually: true },
   custom: {
