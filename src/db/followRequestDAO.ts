@@ -10,6 +10,7 @@ import {
 
 import { default as userModel } from "./models/User";
 import { default as followRequestModel } from "./models/FollowRequests";
+import notificationDAO from "./notificationDAO";
 
 dotenv.config()
 
@@ -30,6 +31,7 @@ function folowRequestsDAO() {
                 if (toUser.profile_type === 'private') {
                     // Create follow request for private accounts
                     await followRequestModel.create({ fromUser: fromUserId, toUser: toUserId });
+
                     // Optional: Create notification for follow request
                     return formatJSONResponse({
                         msg: "Follow request sent",
