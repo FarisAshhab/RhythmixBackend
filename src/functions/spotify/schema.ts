@@ -42,3 +42,4 @@ export const fetchProfileSpotifyInfoSchema = {
         "access_token"
 	],
 } as const;
+

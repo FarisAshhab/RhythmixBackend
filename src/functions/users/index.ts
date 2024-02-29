@@ -14,7 +14,8 @@ import {
 	fetchPostsSchema,
 	likeUnlikePostSchema,
 	commentPostSchema,
-	fetchNotificationsSchema
+	fetchNotificationsSchema,
+	patchUserHeaderImageSchema
 } from "./schema";
 
 export const addUser = {
@@ -327,6 +328,29 @@ export const getUserFollowing = {
 
 
 /*
+	post method to fetch recommended users
+	link : 
+*/
+export const getRecommendedUsers = {
+	handler: `${handlerPath(__dirname)}/handler.FETCH_RECOMMENDED_USERS`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/getRecommendedUsers",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": getUserFollowersSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+
+/*
 	post method to update a user object in DB
 	link : https://rkmg39eisf.execute-api.us-east-1.amazonaws.com/dev/user/login
 */
@@ -534,6 +558,28 @@ export const commentOnPost = {
             },
         },
     ],
+};
+
+/*
+    post method to add profile pic
+    link : [ API link]
+*/
+export const patchUserHeaderImage = {
+	handler: `${handlerPath(__dirname)}/handler.ADD_USER_PROFILEPIC`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/user/addProfilePic",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": patchUserHeaderImageSchema,
+					},
+				},
+			},
+		},
+	],
 };
 
 
