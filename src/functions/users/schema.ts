@@ -266,8 +266,7 @@ export const fetchNotificationsSchema = {
 export const patchUserHeaderImageSchema = {
 	type: "object",
 	properties: {
-		token: { type: "string" },
-		data: {type: "any"}
+		token: { type: "string" }
 	},
-	required: ["token", "data"],
+	required: ["token"],
 } as const;
