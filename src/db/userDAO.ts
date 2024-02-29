@@ -15,8 +15,11 @@ import { sign } from "jsonwebtoken";
 
 import { default as userModel } from "./models/User";
 import { default as followRequestModel } from "./models/FollowRequests";
+import notificationDAO from "./notificationDAO";
 
 dotenv.config()
+
+const notificationDao = notificationDAO()
 
 function userDAO() {
 
@@ -263,6 +266,79 @@ function userDAO() {
                 });
             }
         },
+
+        async fetchRecommendedUsers(userId: string, limit: number) {
+            try {
+                await connectMongo();
+                
+                // Fetch the user's top genres
+                const user = await userModel.findById(userId as ObjectId);
+                if (!user) {
+                    throw new Error('User not found');
+                }
+                const userGenres = user.topGenres || [];
+        
+                // Find users with similar genres, excluding the requesting user
+                const similarUsers = await userModel.find({
+                    _id: { $ne: userId }, // Exclude the requesting user
+                    topGenres: { $in: userGenres }, // Users with at least one similar genre
+                }).limit(limit);
+        
+                let recommendedUsers = [];
+        
+                // If similar users found, add them to recommendedUsers
+                if (similarUsers.length > 0) {
+                    recommendedUsers = similarUsers
+                        .filter(u => u._id && u.display_name && u.user_name) // Filter out users missing required fields
+                        .map((u) => ({
+                            _id: u._id.toString(),
+                            display_name: u.display_name,
+                            user_name: u.user_name,
+                            profile_pic: u.profile_pic || '',
+                        }));
+        
+                    // If the number of similar users is less than the limit, fetch random users to fulfill the limit
+                    const remainingLimit = limit - recommendedUsers.length;
+                    if (remainingLimit > 0) {
+                        const randomUsers = await userModel.aggregate([
+                            { $match: { _id: { $ne: mongoose.Types.ObjectId.createFromHexString(userId) } } }, // Exclude the requesting user
+                            { $sample: { size: remainingLimit } }, // Randomly select users
+                        ]);
+        
+                        recommendedUsers.push(
+                            ...randomUsers
+                                .filter(u => u._id && u.display_name && u.user_name) // Filter out users missing required fields
+                                .map((u) => ({
+                                    _id: u._id.toString(),
+                                    display_name: u.display_name,
+                                    user_name: u.user_name,
+                                    profile_pic: u.profile_pic || '', // Assuming profile_pic is optional
+                                }))
+                        );
+                    }
+                } else {
+                    // If no similar users found, return random users to fulfill the limit
+                    const randomUsers = await userModel.aggregate([
+                        { $match: { _id: { $ne: mongoose.Types.ObjectId.createFromHexString(userId) } } }, // Exclude the requesting user
+                        { $sample: { size: limit } }, // Randomly select users
+                    ]);
+        
+                    recommendedUsers = randomUsers
+                        .filter(u => u._id && u.display_name && u.user_name) // Filter out users missing required fields
+                        .map((u) => ({
+                            _id: u._id.toString(),
+                            display_name: u.display_name,
+                            user_name: u.user_name,
+                            profile_pic: u.profile_pic || '', // Assuming profile_pic is optional
+                        }));
+                }
+        
+                return recommendedUsers;
+            } catch (error) {
+                console.error('Error fetching recommended users:', error);
+                throw error; // You might want to handle this differently in your application
+            }
+        },
         
         async getUserFollowingList(id: string) {
             try {
@@ -436,6 +512,8 @@ function userDAO() {
                     await toUser.save();
         
                     // Optional: Create notification for accepted follow request
+                    const addNotification = await notificationDao.createNotification('newFollower', fromUser._id, userId);
+                    console.log(addNotification)
                 }
         
                 return 'All follow requests updated to accepted';

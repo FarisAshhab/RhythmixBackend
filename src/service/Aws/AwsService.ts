@@ -24,6 +24,22 @@ function AwsService() {
         
             var request = await ssmClient.getParameter(params).promise();
             return request.Parameter.Value;
+        },
+
+        async uploadToBucket(key, body, bucket, contentType) {
+            const S3 = new AWS.S3()
+            try {
+                const params = {
+                    Key: key,
+                    Body: body,
+                    Bucket: bucket,
+                    ContentType: contentType
+                }
+                return await S3.upload(params).promise()
+            } catch (e) {
+                console.log(e)
+                throw e
+            }
         }
 
     }

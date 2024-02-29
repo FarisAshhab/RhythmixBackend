@@ -24,7 +24,9 @@ import {
   likePost,
   unLikePost,
   commentOnPost,
-  fetchUserNotifications
+  fetchUserNotifications,
+  patchUserHeaderImage,
+  getRecommendedUsers
  } from '@functions/users';
 
  import { 
@@ -81,7 +83,9 @@ const serverlessConfiguration: AWS = {
     likePost,
     unLikePost,
     commentOnPost,
-    fetchUserNotifications
+    fetchUserNotifications,
+    patchUserHeaderImage,
+    getRecommendedUsers
   },
   package: { individually: true },
   custom: {

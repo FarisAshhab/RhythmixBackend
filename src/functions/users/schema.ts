@@ -258,3 +258,16 @@ export const fetchNotificationsSchema = {
     ],
 } as const;
 
+
+/*
+	This schema is to be followed when a user's header image is added/changed
+*/
+
+export const patchUserHeaderImageSchema = {
+	type: "object",
+	properties: {
+		token: { type: "string" },
+		data: {type: "any"}
+	},
+	required: ["token", "data"],
+} as const;

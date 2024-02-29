@@ -26,7 +26,8 @@ import {
 	fetchPostsSchema,
 	likeUnlikePostSchema,
 	commentPostSchema,
-	fetchNotificationsSchema
+	fetchNotificationsSchema,
+	patchUserHeaderImageSchema
 } from './schema';
 import postDAO from "src/db/postDAO";
 import commentDAO from "src/db/commentDAO";
@@ -48,9 +49,13 @@ const addUser: ValidatedEventAPIGatewayProxyEvent<
 		context.callbackWaitsForEmptyEventLoop = false;
 		console.log(event.body);
 		let topArtistsAndGenres: object
+		let mostRecentSong: any
+		let postCreated: any
 		// if spotify_creds --> add them
 		if (event.body?.access_token){
 			topArtistsAndGenres = await spotifyService.getTopArtistsAndGenres(event.body?.access_token);
+			mostRecentSong = await spotifyService.getMostRecentlyPlayedSong(event.body?.access_token);
+			console.log(mostRecentSong)
 		}
 		const userFound = await userDao.createUser(event.body, topArtistsAndGenres)
 		console.log(userFound)
@@ -60,6 +65,7 @@ const addUser: ValidatedEventAPIGatewayProxyEvent<
 				id: userInfo.savedUser._id,
 			},
 		};
+		postCreated = await postDao.createPost(userInfo.savedUser._id, mostRecentSong)
 		const secretKey = await awsService.fetchCredential("JWT_SECRETKEY");
 		const token = await sign(payload, secretKey, {
 			expiresIn: '7d', // will change to '365d' after we test a shorter timeframe for token and make sure it works
@@ -146,6 +152,32 @@ typeof getUserFollowersSchema
 		context.callbackWaitsForEmptyEventLoop = false;
 		const followersFound = await userDao.getFollowersOfUserList(authenticatedEvent.body.userId)
 		return formatJSONResponse({ followersFound });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+/*
+	tasks: fetches all followers for a specific user and returns minimal info for each
+	returns: user objects or error
+	params: event and context
+*/
+const getRecommendedUsers: ValidatedEventAPIGatewayProxyEvent<
+typeof getUserFollowersSchema
+> = async (event, context) => {
+	try {
+		const authenticatedEvent = await auth(event);
+		if (!authenticatedEvent || !authenticatedEvent.body) {
+			return formatErrorResponse(401, "Token is not valid");
+		}
+		context.callbackWaitsForEmptyEventLoop = false;
+		const recommendedUsers = await userDao.fetchRecommendedUsers(authenticatedEvent.body.userId, 5)
+		console.log("Recommended Users")
+		console.log(recommendedUsers)
+		return formatJSONResponse({ recommendedUsers });
 	} catch (e) {
 		console.log(e);
 		return formatJSONResponse({
@@ -552,6 +584,7 @@ const fetchPosts: ValidatedEventAPIGatewayProxyEvent<
     typeof fetchPostsSchema
 > = async (event, context) => {
     try {
+		console.log(event)
         const authenticatedEvent = await auth(event);
         if (!authenticatedEvent || !authenticatedEvent.body) {
             return formatErrorResponse(401, "Token is not valid");
@@ -766,6 +799,48 @@ const fetchUserNotifications: ValidatedEventAPIGatewayProxyEvent<typeof fetchNot
     }
 };
 
+const patchUserHeaderImage: ValidatedEventAPIGatewayProxyEvent<
+    typeof patchUserHeaderImageSchema
+> = async (event, context) => {
+    const authenticatedEvent = await auth(event);
+    if (!authenticatedEvent || !authenticatedEvent.body) {
+        return formatErrorResponse(401, "Token is not valid");
+    }
+    context.callbackWaitsForEmptyEventLoop = false;
+    
+    let arr: any = Object.values(authenticatedEvent.body.data);
+    let url: string;
+    let res: any;
+    try {
+        res = await awsService.uploadToBucket(
+            `userId_${authenticatedEvent.body.user}.png`,
+            Buffer.from(arr), 
+            `rhythmix-dev-userprofilepics`,
+            'image/jpeg'
+        );
+        url = res.Location;
+
+
+        // Prepare the update data
+        const updateData = {
+            profile_pic: url 
+        };
+
+        // Call the updateUserInfo method
+        await userDao.updateUserInfo(authenticatedEvent.body.user, updateData);
+
+    } catch (e) {
+        console.log(e);
+        return formatErrorResponse(500, "An error occurred while uploading the image");
+    }
+
+    return formatJSONResponse({
+        message: "User header image updated successfully",
+        data: { user: authenticatedEvent.body.user, imageUrl: url }
+    });
+};
+
+
 
 
 export const ADD_USER = middyfy(addUser);
@@ -791,3 +866,5 @@ export const GET_EXACT_USER_SEARCH = middyfy(getExactUserById);
 export const LOGIN = middyfy(loginUser);
 export const UPDATE_USER_SPOTIFY_CREDS = middyfy(updateUserSpotifyCreds);
 export const UPDATE_USER_ACCOUNT = middyfy(updateUserProfile);
+export const ADD_USER_PROFILEPIC = middyfy(patchUserHeaderImage);
+export const FETCH_RECOMMENDED_USERS = middyfy(getRecommendedUsers);
