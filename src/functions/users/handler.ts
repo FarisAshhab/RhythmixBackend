@@ -799,6 +799,47 @@ const fetchUserNotifications: ValidatedEventAPIGatewayProxyEvent<typeof fetchNot
     }
 };
 
+// const patchUserHeaderImage: ValidatedEventAPIGatewayProxyEvent<
+//     typeof patchUserHeaderImageSchema
+// > = async (event, context) => {
+//     const authenticatedEvent = await auth(event);
+//     if (!authenticatedEvent || !authenticatedEvent.body) {
+//         return formatErrorResponse(401, "Token is not valid");
+//     }
+//     context.callbackWaitsForEmptyEventLoop = false;
+    
+//     let arr: any = Object.values(authenticatedEvent.body.data);
+//     let url: string;
+//     let res: any;
+//     try {
+//         res = await awsService.uploadToBucket(
+//             `userId_${authenticatedEvent.body.user}.png`,
+//             Buffer.from(arr), 
+//             `rhythmix-dev-userprofilepics`,
+//             'image/jpeg'
+//         );
+//         url = res.Location;
+
+
+//         // Prepare the update data
+//         const updateData = {
+//             profile_pic: url 
+//         };
+
+//         // Call the updateUserInfo method
+//         await userDao.updateUserInfo(authenticatedEvent.body.user, updateData);
+
+//     } catch (e) {
+//         console.log(e);
+//         return formatErrorResponse(500, "An error occurred while uploading the image");
+//     }
+
+//     return formatJSONResponse({
+//         message: "User header image updated successfully",
+//         data: { user: authenticatedEvent.body.user, imageUrl: url }
+//     });
+// };
+
 const patchUserHeaderImage: ValidatedEventAPIGatewayProxyEvent<
     typeof patchUserHeaderImageSchema
 > = async (event, context) => {
@@ -808,26 +849,17 @@ const patchUserHeaderImage: ValidatedEventAPIGatewayProxyEvent<
     }
     context.callbackWaitsForEmptyEventLoop = false;
     
-    let arr: any = Object.values(authenticatedEvent.body.data);
     let url: string;
     let res: any;
     try {
-        res = await awsService.uploadToBucket(
+        res = await awsService.generatePreSignedURL(
             `userId_${authenticatedEvent.body.user}.png`,
-            Buffer.from(arr), 
             `rhythmix-dev-userprofilepics`,
-            'image/jpeg'
+            'image/png'
         );
-        url = res.Location;
-
-
-        // Prepare the update data
-        const updateData = {
-            profile_pic: url 
-        };
-
-        // Call the updateUserInfo method
-        await userDao.updateUserInfo(authenticatedEvent.body.user, updateData);
+		console.log(`pre signed result for userId: ${authenticatedEvent.body.user}`)
+		console.log(res)
+        url = res;
 
     } catch (e) {
         console.log(e);
@@ -835,12 +867,10 @@ const patchUserHeaderImage: ValidatedEventAPIGatewayProxyEvent<
     }
 
     return formatJSONResponse({
-        message: "User header image updated successfully",
-        data: { user: authenticatedEvent.body.user, imageUrl: url }
+        message: "Pre Signed URL for profile pic created",
+        data: { preSignedUrl: url }
     });
 };
-
-
 
 
 export const ADD_USER = middyfy(addUser);
