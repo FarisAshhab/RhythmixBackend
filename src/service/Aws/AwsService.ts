@@ -40,6 +40,24 @@ function AwsService() {
                 console.log(e)
                 throw e
             }
+        },
+
+        async generatePreSignedURL(key, bucket, contentType) {
+            const S3 = new AWS.S3()
+            const params = {
+                Bucket: bucket,
+                Key: key,
+                Expires: 60 * 5, // URL expiration time (e.g., 5 minutes)
+                ContentType: contentType, 
+            };
+        
+            try {
+                const uploadURL = await S3.getSignedUrlPromise('putObject', params);
+                return uploadURL;
+            } catch (e) {
+                console.log(e)
+                throw e
+            }
         }
 
     }
