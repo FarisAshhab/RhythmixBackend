@@ -553,6 +553,13 @@ function userDAO() {
                 if (updateData.bio !== undefined) {
                     userFound.bio = updateData.bio;
                 }
+                // Add or update topArtists and topGenres if they are present in updateData
+                if (updateData.topArtists !== undefined) {
+                    userFound.topArtists = updateData.topArtists;
+                }
+                if (updateData.topGenres !== undefined) {
+                    userFound.topGenres = updateData.topGenres;
+                }
 
                 // Add more fields as necessary
 

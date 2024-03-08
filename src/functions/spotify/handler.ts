@@ -13,7 +13,8 @@ import postDAO from "src/db/postDAO";
 import {
     refreshUserSpotifyTokenSchema,
     fetchMostRecentSongSchema,
-	fetchProfileSpotifyInfoSchema
+	fetchProfileSpotifyInfoSchema,
+	fetchTopArtistsAndGenresSchema
 } from './schema';
 
 const userDao = userDAO()
@@ -70,6 +71,26 @@ const fetchMostRecentSong: ValidatedEventAPIGatewayProxyEvent<
 		const postCreated = await postDao.createPost(event.body.user, mostRecentSong)
 
 		return formatJSONResponse({ post: postCreated });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
+const fetchWeeklyTopArtistsAndGenres: ValidatedEventAPIGatewayProxyEvent<
+	typeof fetchTopArtistsAndGenresSchema
+> = async (event, context) => {
+	try {
+        // *we don't need session auth check here since we will be calling this from separate backend - not from frontend*
+        const decryptedAccessToken = await decrypt(event.body.access_token);
+		const topArtistsAndGenres = await spotifyService.getTopArtistsAndGenres(decryptedAccessToken);
+        console.log(topArtistsAndGenres)
+        console.log(event.body.user)
+		const userUpdated = await userDao.updateUserInfo(event.body.user, topArtistsAndGenres);
+		let userInfo = JSON.parse(userUpdated.body);
+		return formatJSONResponse({ updatedUserArtistsAndGenres: userInfo.msg });
 	} catch (e) {
 		console.log(e);
 		return formatJSONResponse({
@@ -147,6 +168,7 @@ const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<
 
 export const REFRESH_USER_SPOTIFY_CREDS = middyfy(refreshUserSpotifyToken);
 export const FETCH_MOST_RECENT_SONG = middyfy(fetchMostRecentSong);
+export const FETCH_TOP_ARTISTS_GENRES = middyfy(fetchWeeklyTopArtistsAndGenres);
 export const FETCH_PROFILE_SPOTIFY_INFO = middyfy(fetchProfileSpotifyInfo);
 export const SPOTIFY_LOGIN = middyfy(spotifyLogin);
 export const SPOTIFY_CALLBACK = middyfy(spotifyCallback);

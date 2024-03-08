@@ -2,7 +2,8 @@ import { handlerPath } from '@libs/handler-resolver';
 import {
 	refreshUserSpotifyTokenSchema,
     fetchMostRecentSongSchema,
-	fetchProfileSpotifyInfoSchema
+	fetchProfileSpotifyInfoSchema,
+	fetchTopArtistsAndGenresSchema
 } from "./schema";
 
 /*
@@ -43,6 +44,28 @@ export const fetchMostRecentSong = {
 				request: {
 					schemas: {
 						"application/json": fetchMostRecentSongSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
+	post method to fetch users top artists and genres
+	link : 
+*/
+export const fetchWeeklyTopArtistsAndGenres = {
+	handler: `${handlerPath(__dirname)}/handler.FETCH_TOP_ARTISTS_GENRES`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/spotify/fetchTopArtistsGenres",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": fetchTopArtistsAndGenresSchema,
 					},
 				},
 			},
