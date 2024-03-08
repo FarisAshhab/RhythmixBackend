@@ -111,7 +111,7 @@ function postDAO() {
                             as: "comments"
                         }
                     },
-                    { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } }, // Adjusted
+                    { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } },
                     {
                         $lookup: {
                             from: "user",
@@ -121,7 +121,6 @@ function postDAO() {
                         }
                     },
                     { $unwind: { path: "$comments.userDetails", preserveNullAndEmptyArrays: true } },
-                    // Project and format the comment user details
                     {
                         $project: {
                             _id: 1,
@@ -133,13 +132,14 @@ function postDAO() {
                             user_id: 1,
                             "user_name": "$userDetails.user_name",
                             "display_name": "$userDetails.display_name",
+                            "profile_pic": "$userDetails.profile_pic", // Include the profile_pic of the post's author
                             "comments.text": 1,
                             "comments.created_at": 1,
-                            "commentUserId": "$comments.user_id", // Include the userId of each comment
-                            "commentUserName": "$comments.userDetails.user_name", // Use userName instead of displayName
+                            "commentUserId": "$comments.user_id",
+                            "commentUserName": "$comments.userDetails.user_name",
+                            "commentUserProfilePic": "$comments.userDetails.profile_pic" // Include the profile_pic of the comment's author
                         }
                     },
-                    // Group the comments back into their respective posts
                     {
                         $group: {
                             _id: "$_id",
@@ -151,12 +151,14 @@ function postDAO() {
                             user_id: { $first: "$user_id" },
                             user_name: { $first: "$user_name" },
                             display_name: { $first: "$display_name" },
+                            profile_pic: { $first: "$profile_pic" }, // Aggregate the profile_pic with the post details
                             comments: { 
                                 $push: { 
                                     text: "$comments.text", 
                                     created_at: "$comments.created_at", 
-                                    user_id: "$commentUserId", // Aggregate the userId with the comment
-                                    user_name: "$commentUserName" // Aggregate the userName with the comment
+                                    user_id: "$commentUserId",
+                                    user_name: "$commentUserName",
+                                    user_profile_pic: "$commentUserProfilePic" // Aggregate the profile_pic with the comment details
                                 }
                             }
                         }
@@ -174,13 +176,14 @@ function postDAO() {
                 });
             }
         },
+        
 
         // this will be used for user profile
         async fetchUserPosts(userId: string, lastPostTimestamp: string, limit: number = 10) {
             try {
                 await connectMongo();
         
-                // Fetch the user's details for username and display name
+                // Fetch the user's details for username, display name, and profile picture
                 const user = await userModel.findById(userId);
                 if (!user) {
                     return formatErrorResponse(404, "User not found");
@@ -216,7 +219,6 @@ function postDAO() {
                             as: "comments"
                         }
                     },
-                    // Optional: Limit the number of comments here if desired
                     {
                         $lookup: {
                             from: "user",
@@ -235,6 +237,7 @@ function postDAO() {
                             songDetails: 1,
                             user_name: user.user_name,
                             display_name: user.display_name,
+                            profile_pic: user.profile_pic, // Include the user's profile picture
                             userId: user._id,
                             comments: {
                                 $map: {
@@ -247,6 +250,12 @@ function postDAO() {
                                         user_name: {
                                             $arrayElemAt: [
                                                 "$commentUserDetails.user_name",
+                                                { $indexOfArray: ["$commentUserDetails._id", "$$comment.user_id"] }
+                                            ]
+                                        },
+                                        user_profile_pic: { // Include the profile picture of the comment's author
+                                            $arrayElemAt: [
+                                                "$commentUserDetails.profile_pic",
                                                 { $indexOfArray: ["$commentUserDetails._id", "$$comment.user_id"] }
                                             ]
                                         }
@@ -265,6 +274,7 @@ function postDAO() {
                 });
             }
         },
+        
 
         // db/postDAO.ts
 
