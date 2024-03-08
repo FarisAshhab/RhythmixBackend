@@ -34,7 +34,8 @@ import {
   fetchMostRecentSong,
   spotifyLogin,
   spotifyCallback,
-  fetchProfileSpotifyInfo
+  fetchProfileSpotifyInfo,
+  fetchWeeklyTopArtistsAndGenres
  } from '@functions/spotify';
 
 const serverlessConfiguration: AWS = {
@@ -85,7 +86,8 @@ const serverlessConfiguration: AWS = {
     commentOnPost,
     fetchUserNotifications,
     patchUserHeaderImage,
-    getRecommendedUsers
+    getRecommendedUsers,
+    fetchWeeklyTopArtistsAndGenres
   },
   package: { individually: true },
   custom: {

@@ -43,3 +43,18 @@ export const fetchProfileSpotifyInfoSchema = {
 	],
 } as const;
 
+
+/*
+	This schema is to be followed when a fetching user's most recent played song
+*/
+export const fetchTopArtistsAndGenresSchema = {
+	type: "object",
+	properties: {
+		access_token: { type: "string" },
+		user: { type: "string" }
+	},
+	required: [
+        "access_token",
+		"user"
+	],
+} as const;
