@@ -79,6 +79,29 @@ const fetchMostRecentSong: ValidatedEventAPIGatewayProxyEvent<
 	}
 };
 
+const fetchTopWeeklyTracks: ValidatedEventAPIGatewayProxyEvent<
+	typeof fetchMostRecentSongSchema
+> = async (event, context) => {
+	try {
+        // *we don't need session auth check here since we will be calling this from separate backend - not from frontend*
+        const decryptedAccessToken = await decrypt(event.body.access_token);
+		const topTracks = await spotifyService.getTop5RecentlyPlayedTracks(decryptedAccessToken);
+        console.log(topTracks)
+        console.log(event.body.user)
+
+        // check if song is in db --> add it if not
+		// create post Object in Database
+		// const postCreated = await postDao.createPost(event.body.user, mostRecentSong)
+
+		return formatJSONResponse({ post: topTracks });
+	} catch (e) {
+		console.log(e);
+		return formatJSONResponse({
+		messages: [{ error: e }]
+		});
+	}
+};
+
 const fetchWeeklyTopArtistsAndGenres: ValidatedEventAPIGatewayProxyEvent<
 	typeof fetchTopArtistsAndGenresSchema
 > = async (event, context) => {
@@ -168,6 +191,7 @@ const spotifyLogin: ValidatedEventAPIGatewayProxyEvent<any> = async (): Promise<
 
 export const REFRESH_USER_SPOTIFY_CREDS = middyfy(refreshUserSpotifyToken);
 export const FETCH_MOST_RECENT_SONG = middyfy(fetchMostRecentSong);
+export const FETCH_TOP_WEEKLY_TRACKS = middyfy(fetchTopWeeklyTracks);
 export const FETCH_TOP_ARTISTS_GENRES = middyfy(fetchWeeklyTopArtistsAndGenres);
 export const FETCH_PROFILE_SPOTIFY_INFO = middyfy(fetchProfileSpotifyInfo);
 export const SPOTIFY_LOGIN = middyfy(spotifyLogin);
