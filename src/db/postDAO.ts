@@ -33,6 +33,7 @@ function postDAO() {
                         trackId: songData.trackId,
                         trackName: songData.trackName,
                         previewUrl: songData.previewUrl,
+                        albumName: songData.albumName,
                         spotifyTrackUrl: songData.spotifyTrackUrl,
                         artists: songData.artists,
                         images: songData.images
@@ -176,6 +177,17 @@ function postDAO() {
                 });
             }
         },
+
+        async getUserPostCount(userId: string): Promise<number> {
+            try {
+                await connectMongo();
+                const count = await postModel.countDocuments({ user_id: new ObjectId(userId) });
+                return count;
+            } catch (e) {
+                console.error('Error fetching user post count:', e);
+                throw new Error('Failed to fetch user post count');
+            }
+        },
         
 
         // this will be used for user profile
@@ -183,7 +195,9 @@ function postDAO() {
             try {
                 await connectMongo();
         
-                // Fetch the user's details for username, display name, and profile picture
+                // Get the total number of posts by the user
+                const postCount = await this.getUserPostCount(userId);
+
                 const user = await userModel.findById(userId);
                 if (!user) {
                     return formatErrorResponse(404, "User not found");
@@ -266,7 +280,7 @@ function postDAO() {
                     }
                 ]);
         
-                return formatJSONResponse({ posts });
+                return formatJSONResponse({ posts, postCount });
             } catch (e) {
                 console.error(e);
                 return formatJSONResponse({

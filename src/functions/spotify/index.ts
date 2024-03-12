@@ -52,6 +52,28 @@ export const fetchMostRecentSong = {
 };
 
 /*
+	post method to fetch users top 5 tracks of the week
+	link : 
+*/
+export const fetchTopWeeklyTracks = {
+	handler: `${handlerPath(__dirname)}/handler.FETCH_TOP_WEEKLY_TRACKS`,
+	events: [
+		{
+			http: {
+				method: "post",
+				path: "rhythmix/spotify/fetchTopWeeklyTracks",
+				cors: true,
+				request: {
+					schemas: {
+						"application/json": fetchMostRecentSongSchema,
+					},
+				},
+			},
+		},
+	],
+};
+
+/*
 	post method to fetch users top artists and genres
 	link : 
 */

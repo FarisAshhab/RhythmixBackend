@@ -16,10 +16,12 @@ import { sign } from "jsonwebtoken";
 import { default as userModel } from "./models/User";
 import { default as followRequestModel } from "./models/FollowRequests";
 import notificationDAO from "./notificationDAO";
+import postDAO from "./postDAO";
 
 dotenv.config()
 
 const notificationDao = notificationDAO()
+const postDao = postDAO()
 
 function userDAO() {
 
@@ -439,8 +441,10 @@ function userDAO() {
                 if (userResult.length === 0) {
                     return formatErrorResponse(404, "User Not Found");
                 }
+
+                const postCount = await postDao.getUserPostCount(id);
         
-                return formatJSONResponse({ user: userResult[0] });
+                return formatJSONResponse({ user: userResult[0], postCount });
             } catch (e) {
                 console.log(e);
                 return formatJSONResponse({
