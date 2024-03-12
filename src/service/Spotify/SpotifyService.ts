@@ -14,6 +14,30 @@ dotenv.config()
 
 const awsService = AwsService()
 
+// Type definition for artist and image data
+type ArtistInfo = {
+    name: string;
+    id: string;
+    spotifyUrl: string;
+};
+
+type ImageInfo = {
+    url: string;
+    height: number;
+    width: number;
+};
+
+// Extended TrackInfo type to include necessary fields for the response
+type TrackInfo = {
+    trackId: string;
+    trackName: string;
+    previewUrl: string;
+    spotifyTrackUrl: string;
+    artists: ArtistInfo[];
+    images: ImageInfo[];
+    count: number;
+};
+
 function SpotifyService() {
 
     let sv = {
@@ -68,6 +92,7 @@ function SpotifyService() {
                 return {
                     trackId: track.id,
                     trackName: track.name,
+                    albumName: track.album.name, // Added album name here
                     previewUrl: track.preview_url,
                     spotifyTrackUrl: track.external_urls.spotify,
                     artists: artists,
@@ -78,6 +103,82 @@ function SpotifyService() {
                 throw new Error('Failed to fetch recently played song');
             }
         },
+
+        async getTop5RecentlyPlayedTracks(accessToken: string): Promise<TrackInfo[]> {
+            const ONE_WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`
+            };
+        
+            const timeframeStart = Date.now() - ONE_WEEK_IN_MS;
+            let allTracks: any[] = [];
+            let url = `${SPOTIFY_USER_URL}/player/recently-played?limit=50`;
+        
+            try {
+                // Fetch all tracks up to now
+                while (url) {
+                    const response = await axios.get(url, { headers });
+                    console.log("response:::::")
+                    console.log(response)
+                    // Ensure there are items before attempting to access them
+                    if (response.data.items.length === 0) {
+                        break; // Exit the loop if there are no items
+                    }
+                    allTracks = allTracks.concat(response.data.items);
+                    if (new Date(response.data.items[response.data.items.length - 1].played_at).getTime() < timeframeStart) {
+                        // If the last item in this batch is older than our timeframe start, stop fetching more
+                        break;
+                    }
+                    url = response.data.next;
+                }
+        
+                // Filter tracks to only include those within the desired timeframe
+                const filteredTracks = allTracks.filter(item => {
+                    const playedAt = new Date(item.played_at).getTime();
+                    return playedAt >= timeframeStart;
+                });
+        
+                let trackDetails: Record<string, TrackInfo> = {};
+        
+                // Process filtered tracks
+                filteredTracks.forEach((item: any) => {
+                    const track = item.track;
+                    if (!trackDetails[track.id]) {
+                        trackDetails[track.id] = {
+                            trackId: track.id,
+                            trackName: track.name,
+                            previewUrl: track.preview_url,
+                            spotifyTrackUrl: track.external_urls.spotify,
+                            artists: track.artists.map((artist: any) => ({
+                                name: artist.name,
+                                id: artist.id,
+                                spotifyUrl: artist.external_urls.spotify
+                            })),
+                            images: track.album.images.map((image: any) => ({
+                                url: image.url,
+                                height: image.height,
+                                width: image.width
+                            })),
+                            count: 1
+                        };
+                    } else {
+                        trackDetails[track.id].count++;
+                    }
+                });
+        
+                // Sort by play count and return top 5 tracks
+                const sortedTracks: TrackInfo[] = Object.values(trackDetails)
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 5);
+        
+                return sortedTracks;
+        
+            } catch (e) {
+                console.error('Error fetching and processing recently played tracks:', e);
+                throw new Error('Failed to fetch and process recently played tracks');
+            }
+        },
+
 
         // Function to get user top artists - will be shown on each users profile page (saved in DB but refreshed every week)
         async getTopArtistsAndGenres(accessToken: string): Promise<any> {

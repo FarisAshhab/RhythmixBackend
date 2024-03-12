@@ -16,6 +16,7 @@ interface ISong extends Document {
     trackId: string;
     trackName: string;
     previewUrl: string;
+    albumName: string;
     spotifyTrackUrl: string;
     artists: IArtist[];
     images: IImage[];
@@ -35,6 +36,10 @@ const songSchema: Schema = new Schema(
         previewUrl: {
             type: String
         },
+        albumName: { 
+            type: String, 
+            required: true 
+        }, // Add this line
         spotifyTrackUrl: {
             type: String,
             required: true
