@@ -78,6 +78,12 @@ function userDAO() {
                 if (body?.profile_pic){
                     data.profile_pic = body.profilePic;
                 }
+
+                if (!data.profile_pic) {
+                    // Set data.profile_pic to the URL of your default image
+                    data.profile_pic = 'https://rhythmix-dev-userprofilepics.s3.amazonaws.com/defaultProfilePic.jpg';
+                }
+                
                 // if bio is present - add it
                 if (body?.bio){
                     data.bio = body.bio;
@@ -182,7 +188,9 @@ function userDAO() {
                     return formatErrorResponse(404, "User Not Found");
                 }
 
-                return formatJSONResponse({ user: userResultFound[0] });
+                const postCount = await postDao.getUserPostCount(id);
+
+                return formatJSONResponse({ user: userResultFound[0], postCount });
             } catch (e) {
                 console.log(e);
                 return formatJSONResponse({
