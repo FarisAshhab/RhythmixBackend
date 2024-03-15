@@ -54,7 +54,10 @@ const addUser: ValidatedEventAPIGatewayProxyEvent<
 		// if spotify_creds --> add them
 		if (event.body?.access_token){
 			topArtistsAndGenres = await spotifyService.getTopArtistsAndGenres(event.body?.access_token);
+			console.log("topArtistsAndGenres");
+			console.log(topArtistsAndGenres);
 			mostRecentSong = await spotifyService.getMostRecentlyPlayedSong(event.body?.access_token);
+			console.log("mostRecentSong")
 			console.log(mostRecentSong)
 		}
 		const userFound = await userDao.createUser(event.body, topArtistsAndGenres)
@@ -65,7 +68,11 @@ const addUser: ValidatedEventAPIGatewayProxyEvent<
 				id: userInfo.savedUser._id,
 			},
 		};
-		postCreated = await postDao.createPost(userInfo.savedUser._id, mostRecentSong)
+
+		if (mostRecentSong) {
+			postCreated = await postDao.createPost(userInfo.savedUser._id, mostRecentSong)
+		}
+		
 		const secretKey = await awsService.fetchCredential("JWT_SECRETKEY");
 		const token = await sign(payload, secretKey, {
 			expiresIn: '7d', // will change to '365d' after we test a shorter timeframe for token and make sure it works

@@ -70,29 +70,34 @@ function SpotifyService() {
         // Function to get the most recently played song
         async getMostRecentlyPlayedSong(accessToken: string): Promise<any> {
             const headers = {
-            'Authorization': `Bearer ${accessToken}`
+                'Authorization': `Bearer ${accessToken}`
             };
         
             try {
                 const response: AxiosResponse = await axios.get(`${SPOTIFY_USER_URL}/player/recently-played?limit=1`, { headers });
-            
+                
+                if (response.data.items.length === 0) {
+                    // No recently played tracks found
+                    return null; // You can also return a more informative object if preferred
+                }
+                
                 const track = response.data.items[0].track;
                 const artists = track.artists.map((artist: any) => ({
                     name: artist.name,
                     id: artist.id,
                     spotifyUrl: artist.external_urls.spotify
                 }));
-
+        
                 const images = track.album.images.map((image: any) => ({
                     url: image.url,
                     height: image.height,
                     width: image.width
                 }));
-
+        
                 return {
                     trackId: track.id,
                     trackName: track.name,
-                    albumName: track.album.name, // Added album name here
+                    albumName: track.album.name,
                     previewUrl: track.preview_url,
                     spotifyTrackUrl: track.external_urls.spotify,
                     artists: artists,
@@ -100,7 +105,7 @@ function SpotifyService() {
                 };
             } catch (e) {
                 console.error('Error fetching recently played song:', e);
-                throw new Error('Failed to fetch recently played song');
+                return null; // Ensure function returns null if an error occurs
             }
         },
 
